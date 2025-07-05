@@ -1,7 +1,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>com.adham-omran</groupId>
+    <groupId>com.adham_omran</groupId>
     <artifactId>incremental-minimal</artifactId>
     <version>1.0.0</version>
     <properties>
@@ -13,7 +13,7 @@
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-controls</artifactId>
-            <version>11</version>
+            <version>21.0.1</version>
         </dependency>
     </dependencies>
     <build>
@@ -36,7 +36,11 @@
                         <!-- Usage: mvn clean javafx:run -->
                         <id>default-cli</id>
                         <configuration>
-                            <mainClass>com.adham-omran.Incrmental</mainClass>
+                            <mainClass>com.adham_omran.Incremental</mainClass>
+                            <options>
+                                <option>-Djavafx.macosx.embedded=true</option>
+                                <option>-Dprism.order=sw</option>
+                            </options>
                         </configuration>
                     </execution>
                 </executions>
