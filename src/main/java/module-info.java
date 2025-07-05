@@ -1,4 +1,4 @@
-module com.adham-omran {
+module com.adham_omran {
     requires javafx.controls;
-    exports com.adham-omran;
+    exports com.adham_omran;
 }
