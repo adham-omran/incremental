@@ -14,11 +14,8 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
 import javafx.scene.robot.Robot;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.shape.Rectangle;
-import javafx.scene.paint.Color;
-import java.awt.MouseInfo;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -74,21 +71,34 @@ public class Incremental extends Application {
         PDDocument doc = Loader.loadPDF(pdfFile);
 
         PDFRenderer rndr = new PDFRenderer(doc);
-        System.out.println(rndr.renderImage(0).getClass());
-        System.out.println(bufferedImageToFXImage(rndr.renderImage(0)).getClass());
 
-        // Image Viewing
+        // Render at high DPI for quality, then scale down for display
+        BufferedImage highQualityImage = rndr.renderImageWithDPI(0, 300);
+        System.out.println("High quality image class: " + highQualityImage.getClass());
+        System.out.println("Converted FX image class: " + bufferedImageToFXImage(highQualityImage).getClass());
 
-        Image img = new Image(getClass().getResourceAsStream("/image.jpg"));
-        // img = rndr.renderImage(0);
+        // Image Viewing with scaling
+        ImageView iv2 = new ImageView(bufferedImageToFXImage(highQualityImage));
 
-        ImageView iv1 = new ImageView(img);
-        ImageView iv2 = new ImageView(bufferedImageToFXImage(rndr.renderImageWithDPI(0, 300)));
+        // Scale down for display (300 DPI -> 72 DPI equivalent)
+        double scaleFactor = 72.0 / 300.0; // Scale down by ~24%
+        iv2.setFitWidth(highQualityImage.getWidth() * scaleFactor);
+        iv2.setFitHeight(highQualityImage.getHeight() * scaleFactor);
+        iv2.setPreserveRatio(true);
+        iv2.setSmooth(true); // Enable smooth scaling
 
         btn.setOnAction(event -> {
-                System.out.println(MouseInfo.getPointerInfo().getLocation());
-                System.out.println("Number of pages: " + doc.getNumberOfPages());
-            });
+            Stage imageStage = new Stage();
+            imageStage.setTitle("View");
+
+            ImageView iv1 = new ImageView(new Image(getClass().getResourceAsStream("/image.jpg")));
+            iv1.setFitWidth(500);
+            iv1.setPreserveRatio(true);
+
+            Scene imageScene = new Scene(new StackPane(iv1), 500, 500);
+            imageStage.setScene(imageScene);
+            imageStage.show();
+        });
 
         gp.setPadding(new Insets(10));
         gp.setHgap( 4 );
