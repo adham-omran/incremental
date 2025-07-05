@@ -1,4 +1,4 @@
-package com.adham-omran;
+package com.adham_omran;
 
 public class SystemInfo {
 
