@@ -10,6 +10,8 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
 import javafx.scene.robot.Robot;
 import javafx.scene.input.MouseEvent;
@@ -17,6 +19,10 @@ import javafx.scene.layout.Pane;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.paint.Color;
 import java.awt.MouseInfo;
+import java.io.File;
+import java.io.IOException;
+
+import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 
 /**
@@ -41,7 +47,7 @@ public class Incremental extends Application {
     }
 
     @Override
-    public void start(Stage stage) {
+    public void start(Stage stage) throws IOException {
         // Stage <- Scene <- Pane
         VBox vbox = new VBox();
 
@@ -56,8 +62,20 @@ public class Incremental extends Application {
 
         Button btn = new Button("Open PDF");
 
+        // PDF Loading
+        File pdfFile = new File("/Users/adham/code/incremental-minimal/src/main/java/com/adham_omran/test.pdf");
+
+        PDDocument doc = Loader.loadPDF(pdfFile);
+
+        // Image Viewing
+
+        Image img = new Image(getClass().getResourceAsStream("/image.jpg"));
+
+        ImageView iv1 = new ImageView(img);
+
         btn.setOnAction(event -> {
                 System.out.println(MouseInfo.getPointerInfo().getLocation());
+                System.out.println("Number of pages: " + doc.getNumberOfPages());
             });
 
         gp.setPadding(new Insets(10));
@@ -67,6 +85,7 @@ public class Incremental extends Application {
         gp.add(xLabel, 0, 1);
         gp.add(xField, 1, 1);
         gp.add(btn, 0, 3);
+        gp.add(iv1, 0, 4);
 
         // var scene = new Scene(new StackPane(label), 640, 480);
         stage.setScene(new Scene(gp, 640, 480));
