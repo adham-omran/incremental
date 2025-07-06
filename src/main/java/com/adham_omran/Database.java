@@ -17,13 +17,12 @@ public class Database {
         // NOTE: Connection and Statement are AutoCloseable.
         // Don't forget to close them both in order to avoid leaks.
         try (
-                // create a database connection
                 Connection connection = DriverManager.getConnection(DB_PATH);
                 Statement statement = connection.createStatement();) {
             statement.setQueryTimeout(1);
-            statement.executeUpdate("create table if not exists images (id integer, img blob)");
+            statement.executeUpdate("create table if not exists images (img blob)");
             // Binary Stream Statement
-            String updateImage = "INSERT INTO images (id, img) VALUES (1,?)";
+            String updateImage = "INSERT INTO images (img) VALUES (1)";
             try (PreparedStatement updateImg = connection.prepareStatement(updateImage);) {
                 connection.setAutoCommit(false);
                 updateImg.setBinaryStream(1, input_stream, image_length);
@@ -40,7 +39,7 @@ public class Database {
     }
 
     public Image readImage() {
-        String sql = "select img from images where id = 1";
+        String sql = "select img from images";
 
         try (Connection connection = DriverManager.getConnection(DB_PATH);
              PreparedStatement pstmt = connection.prepareStatement(sql);
