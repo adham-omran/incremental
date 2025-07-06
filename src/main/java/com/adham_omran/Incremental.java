@@ -118,6 +118,8 @@ public class Incremental extends Application {
         });
 
         btnClipboard.setOnAction(event -> {
+                // Save to DB
+            Database dbDatabase = new Database();
             ClipboardUtils cp = new ClipboardUtils();
 
             BufferedImage bufferedImage;
@@ -127,31 +129,22 @@ public class Incremental extends Application {
             if (awtImage instanceof BufferedImage) {
                 bufferedImage = (BufferedImage) awtImage;
             } else {
-                bufferedImage = new BufferedImage(
-                        awtImage.getWidth(null),
-                        awtImage.getHeight(null),
-                        BufferedImage.TYPE_INT_ARGB);
+                bufferedImage = new BufferedImage(awtImage.getWidth(null),
+                                                  awtImage.getHeight(null),
+                                                  BufferedImage.TYPE_INT_ARGB);
                 Graphics2D g2d = bufferedImage.createGraphics();
                 g2d.drawImage(awtImage, 0, 0, null);
                 g2d.dispose();
             }
+            try {
+                ByteArrayOutputStream os = new ByteArrayOutputStream();
+                ImageIO.write(bufferedImage, "png", os);
+                InputStream fis = new ByteArrayInputStream(os.toByteArray());
+                dbDatabase.saveImage(fis, os.size());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
 
-            // Convert BufferedImage to JavaFX Image
-            Image img = SwingFXUtils.toFXImage(bufferedImage, null);
-
-            // From java.awt.Image to JavaFX image
-            Stage imageStage = new Stage();
-            imageStage.setTitle("View");
-
-            ImageView iv1 = new ImageView();
-            iv1.setImage(img);
-            iv1.setFitWidth(500);
-            iv1.setPreserveRatio(true);
-
-            Scene imageScene = new Scene(new StackPane(iv1), 500, 500);
-            imageStage.setScene(imageScene);
-            imageStage.show();
-            System.out.println(event);
         });
 
         gp.setPadding(new Insets(10));
