@@ -22,7 +22,7 @@ public class Database {
             statement.setQueryTimeout(1);
             statement.executeUpdate("create table if not exists images (img blob)");
             // Binary Stream Statement
-            String updateImage = "INSERT INTO images (img) VALUES (1)";
+            String updateImage = "INSERT INTO images (img) VALUES (?)";
             try (PreparedStatement updateImg = connection.prepareStatement(updateImage);) {
                 connection.setAutoCommit(false);
                 updateImg.setBinaryStream(1, input_stream, image_length);
