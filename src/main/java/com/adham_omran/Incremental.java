@@ -71,6 +71,7 @@ public class Incremental extends Application {
 
         Button btn = new Button("Open PDF");
         Button btnDatabase = new Button("Do stuff with db");
+        Button btnReadImage = new Button("Read Image");
 
         // PDF Loading
         File pdfFile = new File("/Users/adham/code/incremental-minimal/src/main/java/com/adham_omran/test.pdf");
@@ -112,11 +113,30 @@ public class Incremental extends Application {
             // Put the image in the database
                 File img = new File("/Users/adham/code/incremental-minimal/src/main/resources/image.jpg");
             try (FileInputStream fis = new FileInputStream(img)) {
-                Database.main(fis, (int) img.length());
+                Database.saveImage(fis, (int) img.length());
                 System.out.println("Image added.");
             } catch (IOException ex) {
                 ex.printStackTrace();
             }
+        });
+
+        btnReadImage.setOnAction(event -> {
+            // 1. Retrieve the image as input stream
+            // 2. DB -> InputStream -> Image -> ImageView
+            Image img = Database.readImage();
+            Stage imageStage = new Stage();
+            imageStage.setTitle("View");
+
+            ImageView iv1 = new ImageView();
+            iv1.setImage(img);
+            iv1.setFitWidth(500);
+            iv1.setPreserveRatio(true);
+
+            Scene imageScene = new Scene(new StackPane(iv1), 500, 500);
+            imageStage.setScene(imageScene);
+            imageStage.show();
+
+            System.out.println("Reading image.");
         });
         gp.setPadding(new Insets(10));
         gp.setHgap(4);
@@ -126,7 +146,7 @@ public class Incremental extends Application {
         gp.add(xField, 1, 1);
         gp.add(btn, 0, 3);
         gp.add(btnDatabase, 0, 4);
-        // gp.add(iv2, 0, 4);
+        gp.add(btnReadImage, 0, 5);
 
         // var scene = new Scene(new StackPane(label), 640, 480);
         stage.setScene(new Scene(gp, 640, 480));
