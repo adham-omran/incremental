@@ -11,17 +11,18 @@ import java.sql.Statement;
 import javafx.scene.image.Image;
 
 public class Database {
-    public static void saveImage(InputStream input_stream, int image_length) {
+    String DB_PATH = "jdbc:sqlite:test.db";
+
+    public void saveImage(InputStream input_stream, int image_length) {
         // NOTE: Connection and Statement are AutoCloseable.
         // Don't forget to close them both in order to avoid leaks.
-        var DB_PATH = "jdbc:sqlite:test.db";
         try (
                 // create a database connection
                 Connection connection = DriverManager.getConnection(DB_PATH);
                 Statement statement = connection.createStatement();) {
             statement.setQueryTimeout(1);
             statement.executeUpdate("create table if not exists images (id integer, img blob)");
-            // Binary Blob Statement
+            // Binary Stream Statement
             String updateImage = "INSERT INTO images (id, img) VALUES (1,?)";
             try (PreparedStatement updateImg = connection.prepareStatement(updateImage);) {
                 connection.setAutoCommit(false);
@@ -38,8 +39,7 @@ public class Database {
 
     }
 
-    public static Image readImage() {
-        var DB_PATH = "jdbc:sqlite:test.db";
+    public Image readImage() {
         String sql = "select img from images where id = 1";
 
         try (Connection connection = DriverManager.getConnection(DB_PATH);

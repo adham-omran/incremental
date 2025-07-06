@@ -1,6 +1,11 @@
 package com.adham_omran;
 
+import java.awt.Image;
+import java.awt.Toolkit;
 import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
+import java.awt.datatransfer.UnsupportedFlavorException;
+import java.io.IOException;
 
 public class ClipboardUtils {
     /**
@@ -8,14 +13,31 @@ public class ClipboardUtils {
      *
      * @return Returns an Image if successful; otherwise returns null.
      */
-    public void getImageFromClipboard() {
+    public Image getImageFromClipboard() {
         System.out.println("Inside `getImageFromClipboard`.");
+
         try {
-            var tk = java.awt.Toolkit.getDefaultToolkit().getSystemClipboard().getData(DataFlavor.stringFlavor);
-            System.out.println(tk);
-        } catch (Exception e) {
-            // e.printStackTrace();
-            System.out.println("No content.");
+            Transferable tns = Toolkit.getDefaultToolkit().getSystemClipboard().getContents(null);
+
+            if (tns == null) {
+                System.out.println("Clipboard is empty.");
+                return null;
+            }
+
+            if (tns.isDataFlavorSupported(DataFlavor.imageFlavor)) {
+                return (Image) tns.getTransferData(DataFlavor.imageFlavor);
+            } else {
+                System.out.println("No image flavor supported in clipboard.");
+                return null;
+            }
+
+        } catch (UnsupportedFlavorException | IOException e) {
+            System.err.println("Error accessing clipboard: " + e.getMessage());
+            e.printStackTrace();
+            return null;
+        } catch (IllegalStateException e) {
+            System.err.println("Clipboard unavailable: " + e.getMessage());
+            return null;
         }
     }
 }
