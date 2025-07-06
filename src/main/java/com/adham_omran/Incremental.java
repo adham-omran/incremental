@@ -16,17 +16,23 @@ import javafx.scene.image.WritableImage;
 import javafx.scene.robot.Robot;
 import javafx.scene.layout.Pane;
 import javafx.scene.shape.Rectangle;
+import javafx.embed.swing.SwingFXUtils;
 import java.awt.image.BufferedImage;
+import java.awt.image.RenderedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 
 import javax.imageio.ImageIO;
 
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.rendering.PDFRenderer;
+
+import com.adham_omran.Database;
 
 /**
  * JavaFX App
@@ -64,6 +70,7 @@ public class Incremental extends Application {
         TextField xField = new TextField();
 
         Button btn = new Button("Open PDF");
+        Button btnDatabase = new Button("Do stuff with db");
 
         // PDF Loading
         File pdfFile = new File("/Users/adham/code/incremental-minimal/src/main/java/com/adham_omran/test.pdf");
@@ -100,14 +107,26 @@ public class Incremental extends Application {
             imageStage.show();
         });
 
+
+        btnDatabase.setOnAction(event -> {
+            // Put the image in the database
+                File img = new File("/Users/adham/code/incremental-minimal/src/main/resources/image.jpg");
+            try (FileInputStream fis = new FileInputStream(img)) {
+                Database.main(fis, (int) img.length());
+                System.out.println("Image added.");
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        });
         gp.setPadding(new Insets(10));
-        gp.setHgap( 4 );
-        gp.setVgap( 8 );
+        gp.setHgap(4);
+        gp.setVgap(8);
 
         gp.add(xLabel, 0, 1);
         gp.add(xField, 1, 1);
         gp.add(btn, 0, 3);
-        gp.add(iv2, 0, 4);
+        gp.add(btnDatabase, 0, 4);
+        // gp.add(iv2, 0, 4);
 
         // var scene = new Scene(new StackPane(label), 640, 480);
         stage.setScene(new Scene(gp, 640, 480));
