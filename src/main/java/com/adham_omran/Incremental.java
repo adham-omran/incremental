@@ -205,7 +205,8 @@ public class Incremental extends Application {
             VBox vboxItem = new VBox();
             vboxItem.getChildren().addAll(scrollPane,
                                           new Button("FooBar"),
-                                          btnNextItem);
+                                          btnNextItem,
+                                          btnClose);
             vboxItem.setSpacing(10);
             vboxItem.setPadding(new Insets(10));
 
@@ -240,7 +241,9 @@ public class Incremental extends Application {
 
     private void handleClose(ActionEvent e) {
         // Close the window.
-        // TODO
+        Button source = (Button) e.getSource();
+        Stage stage = (Stage) source.getScene().getWindow();
+        stage.close();
     }
 
     public static Image bufferedImageToFXImage(BufferedImage bufferedImage) {
