@@ -75,6 +75,7 @@ public class Database {
             if (rs.next()) { // Check if result exists
                 try (InputStream is = rs.getBinaryStream("img")) {
                     if (is != null) {
+                        increaseDate(rs.getInt("rowid"), connection);
                         Image img = new Image(is);
                         System.out.println("Last read: " + rs.getTimestamp("scheduled_at"));
                         return img;
@@ -86,6 +87,19 @@ public class Database {
         } catch (Exception ex) {
             ex.printStackTrace();
             return null; // Return null on error
+        }
+    }
+
+    public void increaseDate(int rowid, Connection conn) throws Exception {
+        // Increase the `scheduled_at` value for an item with `rowid`.
+        String sql = "UPDATE images SET scheduled_at = datetime(scheduled_at, '+1 day') WHERE rowid = ?";
+
+        try (PreparedStatement pstmt = conn.prepareStatement(sql);) {
+            pstmt.setInt(1, rowid);
+            pstmt.executeUpdate();
+            System.out.println("Updated rowid " + rowid + ".");
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
         }
     }
 }
