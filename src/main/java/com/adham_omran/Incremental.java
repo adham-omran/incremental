@@ -20,6 +20,7 @@ import javafx.scene.robot.Robot;
 import javafx.scene.layout.Pane;
 import javafx.scene.shape.Rectangle;
 import javafx.embed.swing.SwingFXUtils;
+import javafx.event.ActionEvent;
 import javafx.scene.control.ScrollPane;
 
 import java.awt.Graphics2D;
@@ -195,8 +196,16 @@ public class Incremental extends Application {
             scrollPane.setFitToHeight(true);
             scrollPane.setPrefSize(650, 500);
 
+            Button btnNextItem = new Button("Next Item");
+            btnNextItem.setOnAction(this::handleNextItem);
+
+            Button btnClose = new Button("Close");
+            btnClose.setOnAction(this::handleClose);
+
             VBox vboxItem = new VBox();
-            vboxItem.getChildren().addAll(scrollPane, new Button("FooBar"));
+            vboxItem.getChildren().addAll(scrollPane,
+                                          new Button("FooBar"),
+                                          btnNextItem);
             vboxItem.setSpacing(10);
             vboxItem.setPadding(new Insets(10));
 
@@ -221,6 +230,17 @@ public class Incremental extends Application {
         // var scene = new Scene(new StackPane(label), 640, 480);
         stage.setScene(new Scene(gp, 640, 480));
         stage.show();
+    }
+
+    private void handleNextItem(ActionEvent e) {
+        // Increase the schedule_at value for the current item and
+        // move to the next.
+        System.out.println("Next Item, Increasing Values...");
+    }
+
+    private void handleClose(ActionEvent e) {
+        // Close the window.
+        // TODO
     }
 
     public static Image bufferedImageToFXImage(BufferedImage bufferedImage) {
