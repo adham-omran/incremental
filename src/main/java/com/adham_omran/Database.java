@@ -16,13 +16,16 @@ public class Database {
     public void saveImage(InputStream input_stream, int image_length) {
         // NOTE: Connection and Statement are AutoCloseable.
         // Don't forget to close them both in order to avoid leaks.
+
+        // Save the image with the current timestamp.
         try (
                 Connection connection = DriverManager.getConnection(DB_PATH);
                 Statement statement = connection.createStatement();) {
             statement.setQueryTimeout(1);
             statement.executeUpdate("create table if not exists images (img blob)");
             // Binary Stream Statement
-            String updateImage = "INSERT INTO images (img) VALUES (?)";
+            String updateImage =
+                "INSERT INTO images (img, added_at, scheduled_at, viewed_at) VALUES (?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
             try (PreparedStatement updateImg = connection.prepareStatement(updateImage);) {
                 connection.setAutoCommit(false);
                 updateImg.setBinaryStream(1, input_stream, image_length);
@@ -39,7 +42,7 @@ public class Database {
     }
 
     public Image readImage() {
-        String sql = "select img from images";
+        String sql = "select img, scheduled_at from images order by scheduled_at desc";
 
         try (Connection connection = DriverManager.getConnection(DB_PATH);
              PreparedStatement pstmt = connection.prepareStatement(sql);
@@ -49,6 +52,31 @@ public class Database {
                 try (InputStream is = rs.getBinaryStream("img")) {
                     if (is != null) {
                         Image img = new Image(is);
+                        System.out.println("Last read: " + rs.getTimestamp("scheduled_at"));
+                        return img;
+                    }
+                }
+            }
+            return null; // No image found
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return null; // Return null on error
+        }
+    }
+
+   public Image nextImage() {
+        String sql = "select img, scheduled_at from images order by scheduled_at desc";
+
+        try (Connection connection = DriverManager.getConnection(DB_PATH);
+             PreparedStatement pstmt = connection.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+
+            if (rs.next()) { // Check if result exists
+                try (InputStream is = rs.getBinaryStream("img")) {
+                    if (is != null) {
+                        Image img = new Image(is);
+                        System.out.println("Last read: " + rs.getTimestamp("scheduled_at"));
                         return img;
                     }
                 }

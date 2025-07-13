@@ -2,9 +2,12 @@ package com.adham_omran;
 
 import javafx.application.Application;
 import javafx.geometry.Insets;
+import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
@@ -47,8 +50,7 @@ public class Incremental extends Application {
         Robot robot = new Robot();
         try {
             return robot.getScreenCapture(null, x, y, width, height);
-        }
-        catch (IllegalArgumentException exception) {
+        } catch (IllegalArgumentException exception) {
             exception.printStackTrace();
             return null;
         }
@@ -71,7 +73,9 @@ public class Incremental extends Application {
         Button btn = new Button("Open PDF");
         Button btnDatabase = new Button("Do stuff with db");
         Button btnReadImage = new Button("Read Image");
-        Button btnClipboard = new Button("Get from Clipboard");
+        Button btnClipboard = new Button("Save from Clipboard");
+        Button btnTable = new Button("View Table");
+        Button btnNext = new Button("Next Item");
 
         btn.setOnAction(event -> {
             Stage imageStage = new Stage();
@@ -86,10 +90,9 @@ public class Incremental extends Application {
             imageStage.show();
         });
 
-
         btnDatabase.setOnAction(event -> {
             // Put the image in the database
-                File img = new File("/Users/adham/code/incremental-minimal/src/main/resources/image.jpg");
+            File img = new File("/Users/adham/code/incremental-minimal/src/main/resources/image.jpg");
             Database dbDatabase = new Database();
             try (FileInputStream fis = new FileInputStream(img)) {
                 dbDatabase.saveImage(fis, (int) img.length());
@@ -107,10 +110,10 @@ public class Incremental extends Application {
 
             ImageView iv1 = new ImageView();
             iv1.setImage(img);
-            iv1.setFitWidth(500);
+            iv1.setFitWidth(img.getWidth());
             iv1.setPreserveRatio(true);
 
-            Scene imageScene = new Scene(new StackPane(iv1), 500, 500);
+            Scene imageScene = new Scene(new StackPane(iv1));
             imageStage.setScene(imageScene);
             imageStage.show();
 
@@ -118,7 +121,7 @@ public class Incremental extends Application {
         });
 
         btnClipboard.setOnAction(event -> {
-                // Save to DB
+            // Save to DB
             Database dbDatabase = new Database();
             ClipboardUtils cp = new ClipboardUtils();
 
@@ -127,16 +130,20 @@ public class Incremental extends Application {
 
             // Convert to BufferedImage if it isn't already
             if (awtImage instanceof BufferedImage) {
+                System.out.println("Conversion Success.");
                 bufferedImage = (BufferedImage) awtImage;
             } else {
+                System.out.println("Conversion in progress...");
                 bufferedImage = new BufferedImage(awtImage.getWidth(null),
-                                                  awtImage.getHeight(null),
-                                                  BufferedImage.TYPE_INT_ARGB);
+                        awtImage.getHeight(null),
+                        BufferedImage.TYPE_INT_ARGB);
                 Graphics2D g2d = bufferedImage.createGraphics();
                 g2d.drawImage(awtImage, 0, 0, null);
                 g2d.dispose();
+                System.out.println("Conversion done.");
             }
             try {
+                // Save the image
                 ByteArrayOutputStream os = new ByteArrayOutputStream();
                 ImageIO.write(bufferedImage, "png", os);
                 InputStream fis = new ByteArrayInputStream(os.toByteArray());
@@ -144,19 +151,63 @@ public class Incremental extends Application {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+        });
 
+        btnTable.setOnAction(e -> {
+            System.out.println("Clicked btnTable.");
+            Stage stageTable = new Stage();
+            Group root = new Group();
+            Scene scene = new Scene(root);
+            stageTable.setTitle("Table View Sample");
+
+            TableView<String> table = new TableView<>();
+            table.setEditable(false);
+            TableColumn<String, String> firstNameCol = new TableColumn<>("First Name");
+            TableColumn<String, String> lastNameCol = new TableColumn<>("Last Name");
+
+            table.getColumns().setAll(firstNameCol, lastNameCol);
+
+            VBox vboxTable = new VBox();
+            vboxTable.setSpacing(5);
+            vboxTable.setPadding(new Insets(10, 0, 0, 10));
+            vboxTable.getChildren().addAll(table);
+            ((Group) scene.getRoot()).getChildren().add(vboxTable);
+            stageTable.setScene(scene);
+            stageTable.show();
+
+        });
+
+        btnNext.setOnAction(e -> {
+            Database dbDatabase = new Database();
+            Image img = dbDatabase.nextImage();
+            Stage imageStage = new Stage();
+            imageStage.setTitle("Item");
+
+            ImageView iv1 = new ImageView();
+            iv1.setImage(img);
+            iv1.setFitWidth(img.getWidth() + 200);
+            iv1.setPreserveRatio(true);
+
+            GridPane gpItem = new GridPane();
+            gpItem.add(iv1, 0, 0);
+            gpItem.add(new Button("FooBar"), 0, 1);
+            Scene itemScene = new Scene(gpItem);
+            imageStage.setScene(itemScene);
+            imageStage.show();
+
+            System.out.println("Reading image.");
         });
 
         gp.setPadding(new Insets(10));
         gp.setHgap(4);
         gp.setVgap(8);
 
-        gp.add(xLabel, 0, 1);
-        gp.add(xField, 1, 1);
         gp.add(btn, 0, 3);
         gp.add(btnDatabase, 0, 4);
         gp.add(btnReadImage, 0, 5);
         gp.add(btnClipboard, 0, 6);
+        gp.add(btnTable, 0, 7);
+        gp.add(btnNext, 0, 8);
 
         // var scene = new Scene(new StackPane(label), 640, 480);
         stage.setScene(new Scene(gp, 640, 480));
