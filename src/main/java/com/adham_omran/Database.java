@@ -66,7 +66,7 @@ public class Database {
     }
 
    public Image nextImage() {
-        String sql = "select img, scheduled_at from images order by scheduled_at desc";
+        String sql = "select * from images order by scheduled_at asc";
 
         try (Connection connection = DriverManager.getConnection(DB_PATH);
              PreparedStatement pstmt = connection.prepareStatement(sql);
