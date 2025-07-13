@@ -20,6 +20,7 @@ import javafx.scene.robot.Robot;
 import javafx.scene.layout.Pane;
 import javafx.scene.shape.Rectangle;
 import javafx.embed.swing.SwingFXUtils;
+import javafx.scene.control.ScrollPane;
 
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
@@ -185,13 +186,21 @@ public class Incremental extends Application {
 
             ImageView iv1 = new ImageView();
             iv1.setImage(img);
-            iv1.setFitWidth(img.getWidth() + 200);
+            iv1.setFitWidth(600);
             iv1.setPreserveRatio(true);
 
-            GridPane gpItem = new GridPane();
-            gpItem.add(iv1, 0, 0);
-            gpItem.add(new Button("FooBar"), 0, 1);
-            Scene itemScene = new Scene(gpItem);
+            ScrollPane scrollPane = new ScrollPane();
+            scrollPane.setContent(iv1);
+            scrollPane.setFitToWidth(true);
+            scrollPane.setFitToHeight(true);
+            scrollPane.setPrefSize(650, 500);
+
+            VBox vboxItem = new VBox();
+            vboxItem.getChildren().addAll(scrollPane, new Button("FooBar"));
+            vboxItem.setSpacing(10);
+            vboxItem.setPadding(new Insets(10));
+
+            Scene itemScene = new Scene(vboxItem, 700, 600);
             imageStage.setScene(itemScene);
             imageStage.show();
 
