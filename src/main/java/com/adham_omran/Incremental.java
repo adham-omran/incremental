@@ -47,6 +47,7 @@ public class Incremental extends Application {
     private double startX, startY;
     private Rectangle selectionRect;
     private Pane drawingPane;
+    private ImageView currentImageView;
 
     private WritableImage captureScreenshot(int x, int y, int width, int height) {
         Robot robot = new Robot();
@@ -179,19 +180,22 @@ public class Incremental extends Application {
 
         });
 
+
         btnNext.setOnAction(e -> {
             Database dbDatabase = new Database();
             Image img = dbDatabase.nextImage();
             Stage imageStage = new Stage();
             imageStage.setTitle("Item");
 
-            ImageView iv1 = new ImageView();
-            iv1.setImage(img);
-            iv1.setFitWidth(600);
-            iv1.setPreserveRatio(true);
+            currentImageView = new ImageView();
+            currentImageView.setImage(img);
+
+
+            currentImageView.setFitWidth(600);
+            currentImageView.setPreserveRatio(true);
 
             ScrollPane scrollPane = new ScrollPane();
-            scrollPane.setContent(iv1);
+            scrollPane.setContent(currentImageView);
             scrollPane.setFitToWidth(true);
             scrollPane.setFitToHeight(true);
             scrollPane.setPrefSize(650, 500);
