@@ -8,6 +8,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
@@ -51,55 +52,9 @@ public class Incremental extends Application {
         // Stage <- Scene <- Pane
         GridPane gp = new GridPane();
 
-        Button btn = new Button("Open PDF");
-        Button btnDatabase = new Button("Do stuff with db");
-        Button btnReadImage = new Button("Read Image");
         Button btnClipboard = new Button("Save from Clipboard");
         Button btnTable = new Button("View Table");
         Button btnNext = new Button("Next Item");
-
-        btn.setOnAction(event -> {
-            Stage imageStage = new Stage();
-            imageStage.setTitle("View");
-
-            ImageView iv1 = new ImageView(new Image(getClass().getResourceAsStream("/image.jpg")));
-            iv1.setFitWidth(500);
-            iv1.setPreserveRatio(true);
-
-            Scene imageScene = new Scene(new StackPane(iv1), 500, 500);
-            imageStage.setScene(imageScene);
-            imageStage.show();
-        });
-
-        btnDatabase.setOnAction(event -> {
-            // Put the image in the database
-            File img = new File("/Users/adham/code/incremental-minimal/src/main/resources/image.jpg");
-            Database dbDatabase = new Database();
-            try (FileInputStream fis = new FileInputStream(img)) {
-                dbDatabase.saveImage(fis, (int) img.length());
-                System.out.println("Image added.");
-            } catch (IOException ex) {
-                ex.printStackTrace();
-            }
-        });
-
-        btnReadImage.setOnAction(event -> {
-            Database dbDatabase = new Database();
-            Image img = dbDatabase.readImage();
-            Stage imageStage = new Stage();
-            imageStage.setTitle("View");
-
-            ImageView iv1 = new ImageView();
-            iv1.setImage(img);
-            iv1.setFitWidth(img.getWidth());
-            iv1.setPreserveRatio(true);
-
-            Scene imageScene = new Scene(new StackPane(iv1));
-            imageStage.setScene(imageScene);
-            imageStage.show();
-
-            System.out.println("Reading image.");
-        });
 
         btnClipboard.setOnAction(event -> {
             // Save to DB
@@ -158,7 +113,6 @@ public class Incremental extends Application {
 
         });
 
-
         btnNext.setOnAction(e -> {
             Database dbDatabase = new Database();
             Image img = dbDatabase.nextImage().getTopicImage();
@@ -184,11 +138,14 @@ public class Incremental extends Application {
             Button btnClose = new Button("Close");
             btnClose.setOnAction(this::handleClose);
 
+            HBox hboxItem = new HBox();
+            hboxItem.getChildren().addAll(btnNextItem, btnClose);
+            hboxItem.setSpacing(10);
+            hboxItem.setPadding(new Insets(10));
+
             VBox vboxItem = new VBox();
             vboxItem.getChildren().addAll(scrollPane,
-                                          new Button("FooBar"),
-                                          btnNextItem,
-                                          btnClose);
+                                          hboxItem);
             vboxItem.setSpacing(10);
             vboxItem.setPadding(new Insets(10));
 
@@ -203,12 +160,9 @@ public class Incremental extends Application {
         gp.setHgap(4);
         gp.setVgap(8);
 
-        gp.add(btn, 0, 3);
-        gp.add(btnDatabase, 0, 4);
-        gp.add(btnReadImage, 0, 5);
-        gp.add(btnClipboard, 0, 6);
-        gp.add(btnTable, 0, 7);
-        gp.add(btnNext, 0, 8);
+        gp.add(btnClipboard, 0, 1);
+        gp.add(btnTable, 1, 1);
+        gp.add(btnNext, 2, 1);
 
         // var scene = new Scene(new StackPane(label), 640, 480);
         stage.setScene(new Scene(gp, 640, 480));

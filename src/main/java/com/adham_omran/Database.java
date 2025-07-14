@@ -10,19 +10,17 @@ import java.sql.Statement;
 
 import javafx.scene.image.Image;
 
+// Move this into a method for creating a database and checking for it
+// Update the schema
+// statement.executeUpdate("create table if not exists images (img blob)");
+
 public class Database {
     String DB_PATH = "jdbc:sqlite:test.db";
 
     public void saveImage(InputStream input_stream, int image_length) {
-        // NOTE: Connection and Statement are AutoCloseable.
-        // Don't forget to close them both in order to avoid leaks.
-
-        // Save the image with the current timestamp.
-        try (
-                Connection connection = DriverManager.getConnection(DB_PATH);
+        try (Connection connection = DriverManager.getConnection(DB_PATH);
                 Statement statement = connection.createStatement();) {
             statement.setQueryTimeout(1);
-            statement.executeUpdate("create table if not exists images (img blob)");
             // Binary Stream Statement
             String updateImage = "INSERT INTO images (img, added_at, scheduled_at, viewed_at) VALUES (?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
             try (PreparedStatement updateImg = connection.prepareStatement(updateImage);) {
