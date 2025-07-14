@@ -238,9 +238,14 @@ public class Incremental extends Application {
     }
 
     private void handleNextItem(ActionEvent e) {
-        // Increase the schedule_at value for the current item and
-        // move to the next.
-        System.out.println("Next Item, Increasing Values...");
+        Database dbDatabase = new Database();
+        Image nextImg = dbDatabase.nextImage();
+        if (currentImageView != null && nextImg != null) {
+            currentImageView.setImage(nextImg);
+            System.out.println("Next image loaded.");
+        } else {
+            System.out.println("Image view or image is null.");
+        }
     }
 
     private void handleClose(ActionEvent e) {
