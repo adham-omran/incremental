@@ -11,8 +11,56 @@ public class Topic {
     private double aFactor;
     private double priority;
     private String content;
-    // The `img` is JavaFX since I want to use it to load it into an
-    // ImageView. We can have helper methods to convert later.
     private Image topicImage;
+    private int rowId;
 
+    // Getters
+    public double getAFactor() {
+        return aFactor;
+    }
+
+    public double getPriority() {
+        return priority;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public Image getTopicImage() {
+        return topicImage;
+    }
+
+    public int getRowId() {
+        return rowId;
+    }
+
+    // Setters with validation
+    public void setAFactor(double aFactor) {
+        if (aFactor <= 0) {
+            throw new IllegalArgumentException("aFactor must be positive");
+        }
+        this.aFactor = aFactor;
+    }
+
+    public void setPriority(double priority) {
+        if (priority < 0) {
+            throw new IllegalArgumentException("Priority cannot be negative");
+        }
+        this.priority = priority;
+    }
+
+    public void setContent(String content) {
+        if (content == null || content.trim().isEmpty()) {
+            throw new IllegalArgumentException("Content cannot be null or empty");
+        }
+        this.content = content.trim();
+    }
+
+    public void setTopicImage(Image topicImage) {
+        if (topicImage == null) {
+            throw new IllegalArgumentException("Topic image cannot be null");
+        }
+        this.topicImage = topicImage;
+    }
 }
