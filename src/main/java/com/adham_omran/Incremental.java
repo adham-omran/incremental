@@ -29,6 +29,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import javax.imageio.ImageIO;
+import jfx.incubator.scene.control.richtext.RichTextArea;
 
 /**
  * JavaFX App
@@ -55,6 +56,8 @@ public class Incremental extends Application {
         Button btnClipboard = new Button("Save from Clipboard");
         Button btnTable = new Button("View Table");
         Button btnNext = new Button("Next Item");
+
+        RichTextArea rta = new RichTextArea();
 
         btnClipboard.setOnAction(event -> {
             // Save to DB
@@ -163,6 +166,7 @@ public class Incremental extends Application {
         gp.add(btnClipboard, 0, 1);
         gp.add(btnTable, 1, 1);
         gp.add(btnNext, 2, 1);
+        gp.add(rta, 0, 2);
 
         // var scene = new Scene(new StackPane(label), 640, 480);
         stage.setScene(new Scene(gp, 640, 480));
