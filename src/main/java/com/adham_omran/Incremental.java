@@ -5,10 +5,8 @@ import javafx.geometry.Insets;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
-import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
-import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -19,35 +17,24 @@ import javafx.scene.image.WritableImage;
 import javafx.scene.robot.Robot;
 import javafx.scene.layout.Pane;
 import javafx.scene.shape.Rectangle;
-import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.scene.control.ScrollPane;
-
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
-import java.awt.image.RenderedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-
 import javax.imageio.ImageIO;
-
-import com.adham_omran.Database;
-import com.adham_omran.ClipboardUtils;
 
 /**
  * JavaFX App
  */
 public class Incremental extends Application {
 
-    private boolean drawMode = false;
-    private double startX, startY;
-    private Rectangle selectionRect;
-    private Pane drawingPane;
-    private ImageView currentImageView;
+   private ImageView currentImageView;
 
     private WritableImage captureScreenshot(int x, int y, int width, int height) {
         Robot robot = new Robot();
@@ -62,16 +49,7 @@ public class Incremental extends Application {
     @Override
     public void start(Stage stage) throws IOException {
         // Stage <- Scene <- Pane
-        VBox vbox = new VBox();
-
         GridPane gp = new GridPane();
-
-        Label xLabel = new Label("X");
-        Label yLabel = new Label("Y");
-        Label widthLabel = new Label("Width");
-        Label heightLabel = new Label("Height");
-
-        TextField xField = new TextField();
 
         Button btn = new Button("Open PDF");
         Button btnDatabase = new Button("Do stuff with db");
