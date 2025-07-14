@@ -63,4 +63,11 @@ public class Topic {
         }
         this.topicImage = topicImage;
     }
+
+    public void setRowId(int rowId) {
+        if (rowId <= 0) {
+            throw new IllegalArgumentException("Row ID cannot bet less than 1.");
+        }
+        this.rowId = rowId;
+    }
 }

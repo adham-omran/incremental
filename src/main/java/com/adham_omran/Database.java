@@ -24,8 +24,7 @@ public class Database {
             statement.setQueryTimeout(1);
             statement.executeUpdate("create table if not exists images (img blob)");
             // Binary Stream Statement
-            String updateImage =
-                "INSERT INTO images (img, added_at, scheduled_at, viewed_at) VALUES (?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
+            String updateImage = "INSERT INTO images (img, added_at, scheduled_at, viewed_at) VALUES (?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
             try (PreparedStatement updateImg = connection.prepareStatement(updateImage);) {
                 connection.setAutoCommit(false);
                 updateImg.setBinaryStream(1, input_stream, image_length);
@@ -45,8 +44,8 @@ public class Database {
         String sql = "select img, scheduled_at from images order by scheduled_at desc";
 
         try (Connection connection = DriverManager.getConnection(DB_PATH);
-             PreparedStatement pstmt = connection.prepareStatement(sql);
-             ResultSet rs = pstmt.executeQuery()) {
+                PreparedStatement pstmt = connection.prepareStatement(sql);
+                ResultSet rs = pstmt.executeQuery()) {
 
             if (rs.next()) { // Check if result exists
                 try (InputStream is = rs.getBinaryStream("img")) {
@@ -65,19 +64,20 @@ public class Database {
         }
     }
 
-   public Topic nextImage() {
+    public Topic nextImage() {
         String sql = "select rowid, * from images order by scheduled_at asc";
         Topic topic = new Topic();
         try (Connection connection = DriverManager.getConnection(DB_PATH);
-             PreparedStatement pstmt = connection.prepareStatement(sql);
-             ResultSet rs = pstmt.executeQuery()) {
+                PreparedStatement pstmt = connection.prepareStatement(sql);
+                ResultSet rs = pstmt.executeQuery()) {
 
             if (rs.next()) { // Check if result exists
                 try (InputStream is = rs.getBinaryStream("img")) {
                     if (is != null) {
-                        increaseDate(rs.getInt("rowid"), connection);
                         topic.setTopicImage(new Image(is));
-                        System.out.println("Last read: " + rs.getTimestamp("scheduled_at"));
+                        topic.setRowId(rs.getInt("rowid"));
+
+                        increaseDate(topic.getRowId(), connection);
                         return topic;
                     }
                 }
