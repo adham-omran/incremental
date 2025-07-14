@@ -65,9 +65,9 @@ public class Database {
         }
     }
 
-   public Image nextImage() {
+   public Topic nextImage() {
         String sql = "select rowid, * from images order by scheduled_at asc";
-
+        Topic topic = new Topic();
         try (Connection connection = DriverManager.getConnection(DB_PATH);
              PreparedStatement pstmt = connection.prepareStatement(sql);
              ResultSet rs = pstmt.executeQuery()) {
@@ -76,9 +76,9 @@ public class Database {
                 try (InputStream is = rs.getBinaryStream("img")) {
                     if (is != null) {
                         increaseDate(rs.getInt("rowid"), connection);
-                        Image img = new Image(is);
+                        topic.setTopicImage(new Image(is));
                         System.out.println("Last read: " + rs.getTimestamp("scheduled_at"));
-                        return img;
+                        return topic;
                     }
                 }
             }

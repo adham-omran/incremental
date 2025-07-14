@@ -183,7 +183,7 @@ public class Incremental extends Application {
 
         btnNext.setOnAction(e -> {
             Database dbDatabase = new Database();
-            Image img = dbDatabase.nextImage();
+            Image img = dbDatabase.nextImage().getTopicImage();
             Stage imageStage = new Stage();
             imageStage.setTitle("Item");
 
@@ -239,7 +239,7 @@ public class Incremental extends Application {
 
     private void handleNextItem(ActionEvent e) {
         Database dbDatabase = new Database();
-        Image nextImg = dbDatabase.nextImage();
+        Image nextImg = dbDatabase.nextImage().getTopicImage();
         if (currentImageView != null && nextImg != null) {
             currentImageView.setImage(nextImg);
             System.out.println("Next image loaded.");
