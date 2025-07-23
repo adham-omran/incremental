@@ -154,8 +154,11 @@ public class Incremental extends Application {
             hboxItem.setSpacing(10);
             hboxItem.setPadding(new Insets(10));
 
+            RichTextArea textContent = new RichTextArea();
+
             VBox vboxItem = new VBox();
             vboxItem.getChildren().addAll(scrollPane,
+                                          textContent,
                                           hboxItem);
             vboxItem.setSpacing(10);
             vboxItem.setPadding(new Insets(10));
