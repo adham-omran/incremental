@@ -22,7 +22,7 @@ public class Database {
                 Statement statement = connection.createStatement();) {
             statement.setQueryTimeout(1);
             // Binary Stream Statement
-            String updateImage = "INSERT INTO images (img, added_at, scheduled_at, viewed_at) VALUES (?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
+            String updateImage = "INSERT INTO images (img, added_at, scheduled_at, viewed_at, a_factor, priority) VALUES (?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 2.0, 0.5)";
             try (PreparedStatement updateImg = connection.prepareStatement(updateImage);) {
                 connection.setAutoCommit(false);
                 updateImg.setBinaryStream(1, input_stream, image_length);
