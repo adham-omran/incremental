@@ -63,6 +63,9 @@ public class Incremental extends Application {
             // Save to DB
             Database dbDatabase = new Database();
             ClipboardUtils cp = new ClipboardUtils();
+            String originalString = btnClipboard.getText();
+            btnClipboard.setText("Saving...");
+            btnClipboard.setDisable(true);
 
             BufferedImage bufferedImage;
             java.awt.Image awtImage = cp.getImageFromClipboard();
@@ -87,8 +90,14 @@ public class Incremental extends Application {
                 ImageIO.write(bufferedImage, "png", os);
                 InputStream fis = new ByteArrayInputStream(os.toByteArray());
                 dbDatabase.saveImage(fis, os.size());
+                btnClipboard.setText(originalString);
+                btnClipboard.setDisable(false);
+
             } catch (IOException e) {
-                e.printStackTrace();
+                btnClipboard.setText("Save failed.");
+                btnClipboard.setDisable(false);
+
+               e.printStackTrace();
             }
         });
 
@@ -124,7 +133,6 @@ public class Incremental extends Application {
 
             currentImageView = new ImageView();
             currentImageView.setImage(img);
-
 
             currentImageView.setFitWidth(600);
             currentImageView.setPreserveRatio(true);
