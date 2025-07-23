@@ -30,6 +30,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import javax.imageio.ImageIO;
 import jfx.incubator.scene.control.richtext.RichTextArea;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.MenuItem;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
 
 /**
  * JavaFX App
@@ -141,7 +145,22 @@ public class Incremental extends Application {
             scrollPane.setContent(currentImageView);
             scrollPane.setFitToWidth(true);
             scrollPane.setFitToHeight(true);
-            // scrollPane.setPrefSize(650, 500);
+            
+            // Create context menu for image copying
+            ContextMenu contextMenu = new ContextMenu();
+            MenuItem copyItem = new MenuItem("Copy Image");
+            copyItem.setOnAction(event -> {
+                Image currentImage = currentImageView.getImage();
+                if (currentImage != null) {
+                    Clipboard clipboard = Clipboard.getSystemClipboard();
+                    ClipboardContent content = new ClipboardContent();
+                    content.putImage(currentImage);
+                    clipboard.setContent(content);
+                    System.out.println("Image copied to clipboard.");
+                }
+            });
+            contextMenu.getItems().add(copyItem);
+            scrollPane.setContextMenu(contextMenu);
 
             Button btnNextItem = new Button("Next Item");
             btnNextItem.setOnAction(this::handleNextItem);
