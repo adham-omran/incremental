@@ -184,6 +184,10 @@ public class Incremental extends Application {
 
             Scene itemScene = new Scene(vboxItem, 700, 600);
             itemStage.setScene(itemScene);
+
+            // Bind scrollPane max height to 80% of stage height
+            scrollPane.maxHeightProperty().bind(itemStage.heightProperty().multiply(0.8));
+
             itemStage.show();
 
             System.out.println("Reading image.");
