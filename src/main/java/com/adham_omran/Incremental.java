@@ -141,7 +141,7 @@ public class Incremental extends Application {
             scrollPane.setContent(currentImageView);
             scrollPane.setFitToWidth(true);
             scrollPane.setFitToHeight(true);
-            scrollPane.setPrefSize(650, 500);
+            // scrollPane.setPrefSize(650, 500);
 
             Button btnNextItem = new Button("Next Item");
             btnNextItem.setOnAction(this::handleNextItem);
@@ -157,9 +157,9 @@ public class Incremental extends Application {
             RichTextArea textContent = new RichTextArea();
 
             VBox vboxItem = new VBox();
-            vboxItem.getChildren().addAll(scrollPane,
-                                          textContent,
-                                          hboxItem);
+            vboxItem.getChildren().addAll(hboxItem,
+                                          scrollPane,
+                                          textContent);
             vboxItem.setSpacing(10);
             vboxItem.setPadding(new Insets(10));
 
