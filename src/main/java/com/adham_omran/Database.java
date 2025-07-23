@@ -75,6 +75,7 @@ public class Database {
                     if (is != null) {
                         topic.setTopicImage(new Image(is));
                         topic.setRowId(rs.getInt("rowid"));
+                        topic.setContent(rs.getString("content"));
 
                         increaseDate(topic.getRowId(), connection);
                         return topic;
