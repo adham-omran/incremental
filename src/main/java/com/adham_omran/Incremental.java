@@ -36,7 +36,7 @@ import jfx.incubator.scene.control.richtext.RichTextArea;
  */
 public class Incremental extends Application {
 
-   private ImageView currentImageView;
+    private ImageView currentImageView;
 
     private WritableImage captureScreenshot(int x, int y, int width, int height) {
         Robot robot = new Robot();
@@ -97,7 +97,7 @@ public class Incremental extends Application {
                 btnClipboard.setText("Save failed.");
                 btnClipboard.setDisable(false);
 
-               e.printStackTrace();
+                e.printStackTrace();
             }
         });
 
