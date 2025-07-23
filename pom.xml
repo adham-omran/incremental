@@ -6,25 +6,12 @@
   <artifactId>incremental-minimal</artifactId>
   <version>1.0.0</version>
   <properties>
-    <itext.version>9.2.0</itext.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.source>21</maven.compiler.source>
     <maven.compiler.target>21</maven.compiler.target>
   </properties>
   <dependencies>
-    <!-- add all iText modules -->
-    <dependency>
-      <groupId>com.itextpdf</groupId>
-      <artifactId>itext-core</artifactId>
-      <version>${itext.version}</version>
-      <type>pom</type>
-    </dependency>
-    <dependency>
-      <groupId>com.itextpdf</groupId>
-      <artifactId>bouncy-castle-adapter</artifactId>
-      <version>${itext.version}</version>
-    </dependency>
-    <dependency>
+   <dependency>
       <groupId>org.openjfx</groupId>
       <artifactId>javafx-controls</artifactId>
       <version>24.0.1</version>
