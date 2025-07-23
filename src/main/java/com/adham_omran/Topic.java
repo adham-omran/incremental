@@ -9,10 +9,20 @@ import javafx.scene.image.Image;
 
 public class Topic {
     private double aFactor;
+    /**
+     * The priority of a Topic, between 0.01 and 0.99, where 0.01 is higher
+     * (compatibility with SuperMemo).
+     */
     private double priority;
     private String content;
     private Image topicImage;
     private int rowId;
+    /**
+     * The parent topic rowId
+     *
+     * Use the parent topic to acquire the source name
+     */
+    private int topicParent;
 
     // Getters
     public double getAFactor() {
@@ -69,5 +79,24 @@ public class Topic {
             throw new IllegalArgumentException("Row ID cannot bet less than 1.");
         }
         this.rowId = rowId;
+    }
+
+    /* Methods */
+
+    /**
+     * <p>
+     * Calculate the next interval.
+     * </p>
+     *
+     * @param
+     * @return The next interval in days.
+     * @see <a href=""></a>
+     * @since 0.0.1
+     */
+    public double calculateNextInterval() {
+        return 0.0;
+    }
+
+    public void setNextReview() {
     }
 }
