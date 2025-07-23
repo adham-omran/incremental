@@ -62,6 +62,7 @@ public class Database {
         }
     }
 
+    /* TODO: Rename to nextTopic */
     public Topic nextImage() {
         String sql = "select rowid, * from images order by scheduled_at asc";
         Topic topic = new Topic();
