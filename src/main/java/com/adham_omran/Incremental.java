@@ -128,8 +128,8 @@ public class Incremental extends Application {
         btnNext.setOnAction(e -> {
             Database dbDatabase = new Database();
             Image img = dbDatabase.nextImage().getTopicImage();
-            Stage imageStage = new Stage();
-            imageStage.setTitle("Item");
+            Stage itemStage = new Stage();
+            itemStage.setTitle("Item");
 
             currentImageView = new ImageView();
             currentImageView.setImage(img);
@@ -161,8 +161,8 @@ public class Incremental extends Application {
             vboxItem.setPadding(new Insets(10));
 
             Scene itemScene = new Scene(vboxItem, 700, 600);
-            imageStage.setScene(itemScene);
-            imageStage.show();
+            itemStage.setScene(itemScene);
+            itemStage.show();
 
             System.out.println("Reading image.");
         });
