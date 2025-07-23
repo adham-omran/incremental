@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import javax.imageio.ImageIO;
 import jfx.incubator.scene.control.richtext.RichTextArea;
+import jfx.incubator.scene.control.richtext.model.StyleAttributeMap;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.input.Clipboard;
@@ -131,7 +132,8 @@ public class Incremental extends Application {
 
         btnNext.setOnAction(e -> {
             Database dbDatabase = new Database();
-            Image img = dbDatabase.nextImage().getTopicImage();
+            Topic currentTopic = dbDatabase.nextImage();
+            Image img = currentTopic.getTopicImage();
             Stage itemStage = new Stage();
             itemStage.setTitle("Item");
 
@@ -174,6 +176,8 @@ public class Incremental extends Application {
             hboxItem.setPadding(new Insets(10));
 
             RichTextArea textContent = new RichTextArea();
+            String currentTopicContent = currentTopic.getContent();
+            textContent.appendText(currentTopicContent, StyleAttributeMap.EMPTY);
 
             VBox vboxItem = new VBox();
             vboxItem.getChildren().addAll(
