@@ -14,6 +14,12 @@ public class Topic {
      * (compatibility with SuperMemo).
      */
     private double priority;
+
+    /**
+     * The text content of a Topic.
+     * What to do with this?
+     * - Content from the output of OCR for Arabic
+     */
     private String content;
     private Image topicImage;
     private int rowId;
