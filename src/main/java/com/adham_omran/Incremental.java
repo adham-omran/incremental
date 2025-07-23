@@ -145,7 +145,7 @@ public class Incremental extends Application {
             scrollPane.setContent(currentImageView);
             scrollPane.setFitToWidth(true);
             scrollPane.setFitToHeight(true);
-            
+
             // Create context menu for image copying
             ContextMenu contextMenu = new ContextMenu();
             MenuItem copyItem = new MenuItem("Copy Image");
@@ -176,9 +176,10 @@ public class Incremental extends Application {
             RichTextArea textContent = new RichTextArea();
 
             VBox vboxItem = new VBox();
-            vboxItem.getChildren().addAll(hboxItem,
-                                          scrollPane,
-                                          textContent);
+            vboxItem.getChildren().addAll(
+                    hboxItem,
+                    scrollPane,
+                    textContent);
             vboxItem.setSpacing(10);
             vboxItem.setPadding(new Insets(10));
 
