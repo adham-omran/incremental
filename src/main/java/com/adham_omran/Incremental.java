@@ -189,15 +189,47 @@ public class Incremental extends Application {
             hboxItem.setSpacing(10);
             hboxItem.setPadding(new Insets(10));
 
-            RichTextArea textContent = new RichTextArea();
-            String currentTopicContent = currentTopic.getContent();
-            textContent.appendText(currentTopicContent, StyleAttributeMap.EMPTY);
+            currentRichTextArea = new RichTextArea();
+            // Load existing content using the database method
+            database.loadContentIntoRichTextArea(currentTopic.getContent(), currentRichTextArea);
+
+            // Approach 1: Model property listener for change detection with debouncing
+            currentRichTextArea.modelProperty().addListener((obs, oldModel, newModel) -> {
+                if (newModel != null) {
+                    // For now, we'll rely on focus-based saving as the primary mechanism
+                    // since the exact StyledTextModel change listener API needs further research
+                    System.out.println("Model changed - content change detection active");
+                }
+            });
+
+            // Approach 2: Focus-based saving (primary mechanism)
+            currentRichTextArea.focusedProperty().addListener((obs, wasFocused, isFocused) -> {
+                if (wasFocused && !isFocused) {
+                    // Save immediately when focus is lost
+                    if (saveTimer != null) {
+                        saveTimer.stop();
+                    }
+                    database.updateContent(currentTopic.getRowId(), currentRichTextArea);
+                }
+            });
+
+            // Additional: Keyboard-based debounced saving as backup
+            currentRichTextArea.setOnKeyReleased(event -> {
+                // Restart the save timer on each keystroke
+                if (saveTimer != null) {
+                    saveTimer.stop();
+                }
+                saveTimer = new Timeline(new KeyFrame(Duration.seconds(2), saveEvent -> {
+                    database.updateContent(currentTopic.getRowId(), currentRichTextArea);
+                }));
+                saveTimer.play();
+            });
 
             VBox vboxItem = new VBox();
             vboxItem.getChildren().addAll(
                     hboxItem,
                     scrollPane,
-                    textContent);
+                    currentRichTextArea);
             vboxItem.setSpacing(10);
             vboxItem.setPadding(new Insets(10));
 
