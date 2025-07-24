@@ -5,6 +5,6 @@ module com.adham_omran {
     requires transitive java.desktop;
     requires transitive java.sql;
     requires org.apache.pdfbox;
-    requires jfx.incubator.richtext;
+    requires transitive jfx.incubator.richtext;
     exports com.adham_omran;
 }
