@@ -138,4 +138,23 @@ public class Database {
         }
     }
 
+    public void loadContentIntoRichTextArea(String content, RichTextArea richTextArea) {
+        try {
+            if (content != null && !content.trim().isEmpty()) {
+                // Try to load as rich text first using InputStream
+                ByteArrayInputStream inputStream = new ByteArrayInputStream(content.getBytes());
+                richTextArea.read(inputStream);
+            } else {
+                // Clear the text area if no content
+                richTextArea.clear();
+            }
+        } catch (Exception e) {
+            // Fallback to plain text if rich text parsing fails
+            System.err.println("Failed to load rich text, falling back to plain text: " + e.getMessage());
+            richTextArea.clear();
+            if (content != null) {
+                richTextArea.appendText(content);
+            }
+        }
+    }
 }
