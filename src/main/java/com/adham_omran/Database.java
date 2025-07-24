@@ -75,7 +75,16 @@ public class Database {
                     if (is != null) {
                         topic.setTopicImage(new Image(is));
                         topic.setRowId(rs.getInt("rowid"));
-                        topic.setContent(rs.getString("content"));
+                        String content = rs.getString("content");
+                        topic.setContent(content != null ? content : "");
+
+                        increaseDate(topic.getRowId(), connection);
+                        return topic;
+                    } else {
+                        // Return for topics with no image
+                        topic.setRowId(rs.getInt("rowid"));
+                        String content = rs.getString("content");
+                        topic.setContent(content != null ? content : "");
 
                         increaseDate(topic.getRowId(), connection);
                         return topic;
