@@ -39,6 +39,13 @@
       <version>25-ea+24</version>
     </dependency>
 
+    <!-- https://mvnrepository.com/artifact/com.dlsc.pdfviewfx/pdfviewfx -->
+    <dependency>
+      <groupId>com.dlsc.pdfviewfx</groupId>
+      <artifactId>pdfviewfx</artifactId>
+      <version>3.1.1</version>
+    </dependency>
+
   </dependencies>
   <build>
     <plugins>
