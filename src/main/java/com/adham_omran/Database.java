@@ -114,4 +114,28 @@ public class Database {
             System.out.println(e.getMessage());
         }
     }
+
+    public void updateContent(int rowid, RichTextArea richTextArea) {
+        String sql = "UPDATE images SET content = ? WHERE rowid = ?";
+
+        try (Connection connection = DriverManager.getConnection(DB_PATH);
+                PreparedStatement pstmt = connection.prepareStatement(sql)) {
+
+            // Serialize rich text content using OutputStream
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            richTextArea.write(outputStream);
+            String richTextContent = outputStream.toString();
+
+            pstmt.setString(1, richTextContent);
+            pstmt.setInt(2, rowid);
+            pstmt.executeUpdate();
+
+            System.out.println("Updated content for rowid " + rowid + ".");
+
+        } catch (Exception e) {
+            System.err.println("Error updating content: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
 }
