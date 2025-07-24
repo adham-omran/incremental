@@ -45,6 +45,10 @@ import javafx.util.Duration;
 public class Incremental extends Application {
 
     private ImageView currentImageView;
+    private Timeline saveTimer;
+    private Database database;
+    private RichTextArea currentRichTextArea;
+    private Topic currentTopic;
 
     private WritableImage captureScreenshot(int x, int y, int width, int height) {
         Robot robot = new Robot();
