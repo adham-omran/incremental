@@ -7,8 +7,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.io.ByteArrayOutputStream;
+import java.io.ByteArrayInputStream;
 
 import javafx.scene.image.Image;
+import jfx.incubator.scene.control.richtext.RichTextArea;
 
 // Move this into a method for creating a database and checking for it
 // Update the schema
