@@ -1,6 +1,7 @@
 package com.adham_omran;
 
 import javafx.application.Application;
+import com.dlsc.pdfviewfx.PDFView;
 import javafx.geometry.Insets;
 import javafx.scene.Group;
 import javafx.scene.Scene;
@@ -49,6 +50,7 @@ public class Incremental extends Application {
     private Database database;
     private RichTextArea currentRichTextArea;
     private Topic currentTopic;
+    protected final PDFView pdfView = new PDFView();
 
     private WritableImage captureScreenshot(int x, int y, int width, int height) {
         Robot robot = new Robot();
@@ -71,6 +73,7 @@ public class Incremental extends Application {
         Button btnClipboard = new Button("Save from Clipboard");
         Button btnTable = new Button("View Table");
         Button btnNext = new Button("Next Item");
+        Button btnOpenPDF = new Button("Open PDF");
 
         RichTextArea rta = new RichTextArea();
 
@@ -251,6 +254,7 @@ public class Incremental extends Application {
         gp.add(btnClipboard, 0, 1);
         gp.add(btnTable, 1, 1);
         gp.add(btnNext, 2, 1);
+        gp.add(btnOpenPDF, 3, 1);
         // gp.add(rta, 0, 2);
 
         // var scene = new Scene(new StackPane(label), 640, 480);
