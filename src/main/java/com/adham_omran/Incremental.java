@@ -62,6 +62,9 @@ public class Incremental extends Application {
 
     @Override
     public void start(Stage stage) throws IOException {
+        // Initialize database
+        database = new Database();
+
         // Stage <- Scene <- Pane
         GridPane gp = new GridPane();
 
@@ -138,8 +141,12 @@ public class Incremental extends Application {
         });
 
         btnNext.setOnAction(e -> {
-            Database dbDatabase = new Database();
-            Topic currentTopic = dbDatabase.nextImage();
+            currentTopic = database.nextImage();
+            if (currentTopic == null) {
+                System.out.println("No topics available.");
+                return;
+            }
+
             Image img = currentTopic.getTopicImage();
             Stage itemStage = new Stage();
             itemStage.setTitle("Item");
