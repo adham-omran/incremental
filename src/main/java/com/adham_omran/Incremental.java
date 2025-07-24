@@ -259,18 +259,41 @@ public class Incremental extends Application {
     }
 
     private void handleNextItem(ActionEvent e) {
-        Database dbDatabase = new Database();
-        Image nextImg = dbDatabase.nextImage().getTopicImage();
-        if (currentImageView != null && nextImg != null) {
-            currentImageView.setImage(nextImg);
-            System.out.println("Next image loaded.");
+        // Save current content before switching if there's unsaved work
+        if (saveTimer != null) {
+            saveTimer.stop();
+        }
+        if (currentTopic != null && currentRichTextArea != null) {
+            database.updateContent(currentTopic.getRowId(), currentRichTextArea);
+        }
+
+        // Load next topic
+        currentTopic = database.nextImage();
+        if (currentTopic != null) {
+            Image nextImg = currentTopic.getTopicImage();
+            if (currentImageView != null && nextImg != null) {
+                currentImageView.setImage(nextImg);
+                // Load the new topic's content into the RichTextArea
+                database.loadContentIntoRichTextArea(currentTopic.getContent(), currentRichTextArea);
+                System.out.println("Next image and content loaded for rowId: " + currentTopic.getRowId());
+            } else {
+                System.out.println("Image view or image is null.");
+            }
         } else {
-            System.out.println("Image view or image is null.");
+            System.out.println("No more topics available.");
         }
     }
 
     private void handleClose(ActionEvent e) {
-        // Close the window.
+        // Save current content before closing
+        if (saveTimer != null) {
+            saveTimer.stop();
+        }
+        if (currentTopic != null && currentRichTextArea != null) {
+            database.updateContent(currentTopic.getRowId(), currentRichTextArea);
+        }
+
+        // Close the window
         Button source = (Button) e.getSource();
         Stage stage = (Stage) source.getScene().getWindow();
         stage.close();
