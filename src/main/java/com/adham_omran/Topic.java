@@ -67,10 +67,8 @@ public class Topic {
     }
 
     public void setContent(String content) {
-        if (content == null || content.trim().isEmpty()) {
-            throw new IllegalArgumentException("Content cannot be null or empty");
-        }
-        this.content = content.trim();
+        // Allow null or empty content
+        this.content = (content != null) ? content.trim() : "";
     }
 
     public void setTopicImage(Image topicImage) {
