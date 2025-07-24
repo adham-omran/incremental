@@ -21,6 +21,14 @@ import javafx.scene.layout.Pane;
 import javafx.scene.shape.Rectangle;
 import javafx.event.ActionEvent;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuBar;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.SeparatorMenuItem;
+import javafx.scene.input.KeyCombination;
+import javafx.scene.layout.Priority;
+import javafx.beans.binding.Bindings;
+import javafx.collections.ObservableList;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
@@ -76,6 +84,10 @@ public class Incremental extends Application {
         Button btnOpenPDF = new Button("Open PDF");
 
         RichTextArea rta = new RichTextArea();
+
+        btnOpenPDF.setOnAction(event -> {
+            showPDFWindow();
+        });
 
         btnClipboard.setOnAction(event -> {
             // Save to DB
@@ -301,6 +313,41 @@ public class Incremental extends Application {
         Button source = (Button) e.getSource();
         Stage stage = (Stage) source.getScene().getWindow();
         stage.close();
+    }
+
+    private void showPDFWindow() {
+        Stage pdfStage = new Stage();
+        pdfStage.setTitle("PDF View");
+
+        MenuItem closeItem = new MenuItem("Close PDF");
+        closeItem.setAccelerator(KeyCombination.valueOf("SHORTCUT+c"));
+        closeItem.setOnAction(evt -> pdfView.unload());
+        closeItem.disableProperty().bind(Bindings.isNull(pdfView.documentProperty()));
+
+        Menu fileMenu = new Menu("File");
+        ObservableList<MenuItem> fileMenuItems = fileMenu.getItems();
+        fileMenuItems.add(closeItem);
+
+        MenuBar menuBar = new MenuBar(fileMenu);
+        menuBar.setUseSystemMenuBar(false);
+
+        VBox.setVgrow(pdfView, Priority.ALWAYS);
+        VBox box = new VBox(menuBar, pdfView);
+        box.setFillWidth(true);
+
+        Scene scene = new Scene(box);
+        pdfStage.setWidth(1000);
+        pdfStage.setHeight(900);
+        pdfStage.setScene(scene);
+        pdfStage.centerOnScreen();
+
+        try {
+            pdfView.load(getClass().getResourceAsStream("/test.pdf"));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        pdfStage.show();
     }
 
     public static Image bufferedImageToFXImage(BufferedImage bufferedImage) {
