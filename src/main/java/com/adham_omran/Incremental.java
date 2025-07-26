@@ -360,7 +360,8 @@ public class Incremental extends Application {
         gp.add(btnClipboard, 0, 1);
         gp.add(btnTable, 1, 1);
         gp.add(btnNext, 2, 1);
-        // gp.add(rta, 0, 2);
+        gp.add(btnTopicWithId, 0, 2);
+        gp.add(txtInput, 1, 2);
 
         // var scene = new Scene(new StackPane(label), 640, 480);
         stage.setScene(new Scene(gp, 640, 480));
