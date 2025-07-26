@@ -66,7 +66,7 @@ public class Database {
     }
 
     /* TODO: Rename to nextTopic */
-    public Topic nextImage() {
+    public Topic nextTopic() {
         String sql = "select rowid, * from images order by scheduled_at asc";
         Topic topic = new Topic();
         try (Connection connection = DriverManager.getConnection(DB_PATH);

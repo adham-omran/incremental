@@ -141,7 +141,7 @@ public class Incremental extends Application {
         });
 
         btnNext.setOnAction(e -> {
-            currentTopic = database.nextImage();
+            currentTopic = database.nextTopic();
             if (currentTopic == null) {
                 System.out.println("No topics available.");
                 return;
@@ -268,7 +268,7 @@ public class Incremental extends Application {
         }
 
         // Load next topic
-        currentTopic = database.nextImage();
+        currentTopic = database.nextTopic();
         if (currentTopic != null) {
             Image nextImg = currentTopic.getTopicImage();
             if (currentImageView != null && nextImg != null) {
