@@ -249,6 +249,110 @@ public class Incremental extends Application {
             System.out.println("Reading image.");
         });
 
+        btnTopicWithId.setOnAction(e -> {
+            currentTopic = database.findTopic(Integer.valueOf(txtInput.getText()));
+            if (currentTopic == null) {
+                System.out.println("No topics available.");
+                return;
+            }
+
+            Image img = currentTopic.getTopicImage();
+            Stage itemStage = new Stage();
+            itemStage.setTitle("Item");
+
+            currentImageView = new ImageView();
+            currentImageView.setImage(img);
+
+            currentImageView.setFitWidth(600);
+            currentImageView.setPreserveRatio(true);
+
+            ScrollPane scrollPane = new ScrollPane();
+            scrollPane.setContent(currentImageView);
+            scrollPane.setFitToWidth(true);
+            scrollPane.setFitToHeight(true);
+
+            // Create context menu for image copying
+            ContextMenu contextMenu = new ContextMenu();
+            MenuItem copyItem = new MenuItem("Copy Image");
+            copyItem.setOnAction(event -> {
+                Image currentImage = currentImageView.getImage();
+                if (currentImage != null) {
+                    Clipboard clipboard = Clipboard.getSystemClipboard();
+                    ClipboardContent content = new ClipboardContent();
+                    content.putImage(currentImage);
+                    clipboard.setContent(content);
+                    System.out.println("Image copied to clipboard.");
+                }
+            });
+            contextMenu.getItems().add(copyItem);
+            scrollPane.setContextMenu(contextMenu);
+
+            Button btnNextItem = new Button("Next Item");
+            btnNextItem.setOnAction(this::handleNextItem);
+
+            Button btnClose = new Button("Close");
+            btnClose.setOnAction(this::handleClose);
+
+            HBox hboxItem = new HBox();
+            hboxItem.getChildren().addAll(btnNextItem, btnClose);
+            hboxItem.setSpacing(10);
+            hboxItem.setPadding(new Insets(10));
+
+            currentRichTextArea = new RichTextArea();
+            // Load existing content using the database method
+            database.loadContentIntoRichTextArea(currentTopic.getContent(), currentRichTextArea);
+
+            // Approach 1: Model property listener for change detection with debouncing
+            currentRichTextArea.modelProperty().addListener((obs, oldModel, newModel) -> {
+                if (newModel != null) {
+                    // For now, we'll rely on focus-based saving as the primary mechanism
+                    // since the exact StyledTextModel change listener API needs further research
+                    System.out.println("Model changed - content change detection active");
+                }
+            });
+
+            // Approach 2: Focus-based saving (primary mechanism)
+            currentRichTextArea.focusedProperty().addListener((obs, wasFocused, isFocused) -> {
+                if (wasFocused && !isFocused) {
+                    // Save immediately when focus is lost
+                    if (saveTimer != null) {
+                        saveTimer.stop();
+                    }
+                    database.updateContent(currentTopic.getRowId(), currentRichTextArea);
+                }
+            });
+
+            // Additional: Keyboard-based debounced saving as backup
+            currentRichTextArea.setOnKeyReleased(event -> {
+                // Restart the save timer on each keystroke
+                if (saveTimer != null) {
+                    saveTimer.stop();
+                }
+                saveTimer = new Timeline(new KeyFrame(Duration.seconds(2), saveEvent -> {
+                    database.updateContent(currentTopic.getRowId(), currentRichTextArea);
+                }));
+                saveTimer.play();
+            });
+
+            VBox vboxItem = new VBox();
+            vboxItem.getChildren().addAll(
+                    hboxItem,
+                    scrollPane,
+                    currentRichTextArea);
+            vboxItem.setSpacing(10);
+            vboxItem.setPadding(new Insets(10));
+
+            Scene itemScene = new Scene(vboxItem, 700, 600);
+            itemStage.setScene(itemScene);
+
+            // Bind scrollPane max height to 80% of stage height
+            scrollPane.maxHeightProperty().bind(itemStage.heightProperty().multiply(0.8));
+
+            itemStage.show();
+
+            System.out.println("Reading image.");
+        });
+
         gp.setPadding(new Insets(10));
         gp.setHgap(4);
         gp.setVgap(8);
