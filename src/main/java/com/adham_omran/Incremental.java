@@ -7,6 +7,8 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.TextField;
+import javafx.scene.control.TextInputDialog;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
@@ -71,6 +73,9 @@ public class Incremental extends Application {
         Button btnClipboard = new Button("Save from Clipboard");
         Button btnTable = new Button("View Table");
         Button btnNext = new Button("Next Item");
+
+        TextField txtInput = new TextField("Enter ID");
+        Button btnTopicWithId = new Button("Open Topic with ID: ");
 
         RichTextArea rta = new RichTextArea();
 
