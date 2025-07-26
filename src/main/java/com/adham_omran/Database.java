@@ -98,6 +98,32 @@ public class Database {
 
         } catch (Exception ex) {
             ex.printStackTrace();
+            System.out.println("Skipping non-image Topic");
+            return null; // Return null on error
+        }
+    }
+
+        public Topic findTopic(int rowid) {
+        String sql = "select rowid, * from images WHERE rowid = ?";
+        Topic topic = new Topic();
+        try (Connection connection = DriverManager.getConnection(DB_PATH);
+                PreparedStatement pstmt = connection.prepareStatement(sql);) {
+            pstmt.setInt(1, rowid);
+            ResultSet rs = pstmt.executeQuery();
+            System.out.println(rs.getString("content"));
+            System.out.println("Try to read image: " + rs.getBinaryStream("img"));
+
+            if (rs.getBinaryStream("img") != null) {
+                InputStream is = rs.getBinaryStream("img");
+                topic.setTopicImage(new Image(is));
+            } else {
+                // No image
+            }
+            topic.setContent(rs.getString("content"));
+            topic.setRowId(rowid);
+            return topic;
+        } catch (Exception ex) {
+            ex.printStackTrace();
             return null; // Return null on error
         }
     }
