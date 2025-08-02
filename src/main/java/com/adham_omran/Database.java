@@ -20,6 +20,7 @@ import jfx.incubator.scene.control.richtext.RichTextArea;
 public class Database {
     String DB_PATH = "jdbc:sqlite:test.db";
 
+
     public void saveImage(InputStream input_stream, int image_length) {
         try (Connection connection = DriverManager.getConnection(DB_PATH);
                 Statement statement = connection.createStatement();) {
@@ -74,31 +75,32 @@ public class Database {
                 ResultSet rs = pstmt.executeQuery()) {
 
             if (rs.next()) { // Check if result exists
-                try (InputStream is = rs.getBinaryStream("img")) {
-                    if (is != null) {
-                        topic.setTopicImage(new Image(is));
-                        topic.setRowId(rs.getInt("rowid"));
-                        String content = rs.getString("content");
-                        topic.setContent(content != null ? content : "");
+                topic.setRowId(rs.getInt("rowid"));
+                String content = rs.getString("content");
+                topic.setContent(content != null ? content : "");
 
-                        increaseDate(topic.getRowId(), connection);
-                        return topic;
-                    } else {
-                        // Return for topics with no image
-                        topic.setRowId(rs.getInt("rowid"));
-                        String content = rs.getString("content");
-                        topic.setContent(content != null ? content : "");
-
-                        increaseDate(topic.getRowId(), connection);
-                        return topic;
+                // Check for PDF first
+                String pdfPath = rs.getString("pdf_path");
+                if (pdfPath != null) {
+                    topic.setPdfPath(pdfPath);
+                    topic.setCurrentPage(rs.getInt("current_page"));
+                } else {
+                    // Handle regular image
+                    try (InputStream is = rs.getBinaryStream("img")) {
+                        if (is != null) {
+                            topic.setTopicImage(new Image(is));
+                        }
                     }
                 }
+
+                increaseDate(topic.getRowId(), connection);
+                return topic;
             }
-            return null; // No image found
+            return null; // No topic found
 
         } catch (Exception ex) {
             ex.printStackTrace();
-            System.out.println("Skipping non-image Topic");
+            System.out.println("Error loading topic");
             return null; // Return null on error
         }
     }
@@ -110,17 +112,21 @@ public class Database {
                 PreparedStatement pstmt = connection.prepareStatement(sql);) {
             pstmt.setInt(1, rowid);
             ResultSet rs = pstmt.executeQuery();
-            System.out.println(rs.getString("content"));
-            System.out.println("Try to read image: " + rs.getBinaryStream("img"));
 
-            if (rs.getBinaryStream("img") != null) {
-                InputStream is = rs.getBinaryStream("img");
-                topic.setTopicImage(new Image(is));
-            } else {
-                // No image
+            if (rs.next()) {
+                topic.setContent(rs.getString("content"));
+                topic.setRowId(rowid);
+
+                // Check for PDF first
+                String pdfPath = rs.getString("pdf_path");
+                if (pdfPath != null) {
+                    topic.setPdfPath(pdfPath);
+                    topic.setCurrentPage(rs.getInt("current_page"));
+                } else if (rs.getBinaryStream("img") != null) {
+                    InputStream is = rs.getBinaryStream("img");
+                    topic.setTopicImage(new Image(is));
+                }
             }
-            topic.setContent(rs.getString("content"));
-            topic.setRowId(rowid);
             return topic;
         } catch (Exception ex) {
             ex.printStackTrace();
