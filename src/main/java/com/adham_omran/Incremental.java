@@ -7,6 +7,10 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import java.util.List;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
@@ -173,27 +177,82 @@ public class Incremental extends Application {
         });
 
         btnTable.setOnAction(e -> {
-            System.out.println("Clicked btnTable.");
+            System.out.println("Opening topics table.");
+            
+            // Create new stage for table
             Stage stageTable = new Stage();
-            Group root = new Group();
-            Scene scene = new Scene(root);
-            stageTable.setTitle("Table View Sample");
-
-            TableView<String> table = new TableView<>();
+            stageTable.setTitle("All Topics");
+            
+            // Get all topics from database
+            List<TopicTableData> allTopics = database.getAllTopics();
+            ObservableList<TopicTableData> data = FXCollections.observableArrayList(allTopics);
+            
+            // Create table
+            TableView<TopicTableData> table = new TableView<>();
+            table.setItems(data);
             table.setEditable(false);
-            TableColumn<String, String> firstNameCol = new TableColumn<>("First Name");
-            TableColumn<String, String> lastNameCol = new TableColumn<>("Last Name");
-
-            table.getColumns().setAll(firstNameCol, lastNameCol);
-
+            
+            // Create columns
+            TableColumn<TopicTableData, Integer> idCol = new TableColumn<>("ID");
+            idCol.setCellValueFactory(new PropertyValueFactory<>("id"));
+            idCol.setPrefWidth(60);
+            
+            TableColumn<TopicTableData, String> typeCol = new TableColumn<>("Type");
+            typeCol.setCellValueFactory(new PropertyValueFactory<>("type"));
+            typeCol.setPrefWidth(70);
+            
+            TableColumn<TopicTableData, String> titleCol = new TableColumn<>("Title");
+            titleCol.setCellValueFactory(new PropertyValueFactory<>("title"));
+            titleCol.setPrefWidth(250);
+            
+            TableColumn<TopicTableData, String> addedCol = new TableColumn<>("Added");
+            addedCol.setCellValueFactory(new PropertyValueFactory<>("addedDate"));
+            addedCol.setPrefWidth(120);
+            
+            TableColumn<TopicTableData, String> scheduledCol = new TableColumn<>("Scheduled");
+            scheduledCol.setCellValueFactory(new PropertyValueFactory<>("scheduledDate"));
+            scheduledCol.setPrefWidth(120);
+            
+            TableColumn<TopicTableData, Double> priorityCol = new TableColumn<>("Priority");
+            priorityCol.setCellValueFactory(new PropertyValueFactory<>("priority"));
+            priorityCol.setPrefWidth(80);
+            
+            TableColumn<TopicTableData, Double> aFactorCol = new TableColumn<>("A-Factor");
+            aFactorCol.setCellValueFactory(new PropertyValueFactory<>("aFactor"));
+            aFactorCol.setPrefWidth(80);
+            
+            // Add columns to table
+            table.getColumns().addAll(idCol, typeCol, titleCol, addedCol, scheduledCol, priorityCol, aFactorCol);
+            
+            // Add double-click functionality to open topics
+            table.setOnMouseClicked(event -> {
+                if (event.getClickCount() == 2) {
+                    TopicTableData selectedTopic = table.getSelectionModel().getSelectedItem();
+                    if (selectedTopic != null) {
+                        System.out.println("Opening topic ID: " + selectedTopic.getId());
+                        // Find and display the topic
+                        Topic topic = database.findTopic(selectedTopic.getId());
+                        if (topic != null) {
+                            currentTopic = topic;
+                            openTopicWindow();
+                        }
+                    }
+                }
+            });
+            
+            // Update window title with count
+            stageTable.setTitle("All Topics (" + allTopics.size() + " items)");
+            
+            // Create layout
             VBox vboxTable = new VBox();
             vboxTable.setSpacing(5);
-            vboxTable.setPadding(new Insets(10, 0, 0, 10));
-            vboxTable.getChildren().addAll(table);
-            ((Group) scene.getRoot()).getChildren().add(vboxTable);
+            vboxTable.setPadding(new Insets(10));
+            vboxTable.getChildren().add(table);
+            
+            // Set up scene and show
+            Scene scene = new Scene(vboxTable, 800, 600);
             stageTable.setScene(scene);
             stageTable.show();
-
         });
 
         btnNext.setOnAction(e -> {
@@ -657,6 +716,196 @@ public class Incremental extends Application {
         Button source = (Button) e.getSource();
         Stage stage = (Stage) source.getScene().getWindow();
         stage.close();
+    }
+
+    private void openTopicWindow() {
+        if (currentTopic == null) {
+            System.out.println("No topic to display.");
+            return;
+        }
+
+        Stage itemStage = new Stage();
+        itemStage.setTitle("Item");
+
+        currentImageView = new ImageView();
+
+        Image img = null;
+        if (currentTopic.isPdf()) {
+            // Render PDF page
+            try {
+                PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDF(currentTopic.getPdfPath());
+                img = PDFImageRenderer.renderPageToFXImage(pdfInfo, currentTopic.getCurrentPage());
+                System.out.println("Rendered PDF page " + currentTopic.getCurrentPage());
+            } catch (Exception ex) {
+                System.err.println("Error rendering PDF: " + ex.getMessage());
+                ex.printStackTrace();
+            }
+        } else {
+            img = currentTopic.getTopicImage();
+        }
+
+        currentImageView.setImage(img);
+        currentImageView.setFitWidth(600);
+        currentImageView.setPreserveRatio(true);
+
+        currentScrollPane = new ScrollPane();
+        currentScrollPane.setContent(currentImageView);
+        currentScrollPane.setFitToWidth(true);
+        currentScrollPane.setFitToHeight(true);
+
+        // Hide scroll pane if no image
+        if (img == null) {
+            currentScrollPane.setVisible(false);
+            currentScrollPane.setManaged(false);
+        }
+
+        // Create context menu for image copying
+        ContextMenu contextMenu = new ContextMenu();
+        MenuItem copyItem = new MenuItem("Copy Image");
+        copyItem.setOnAction(event -> {
+            Image currentImage = currentImageView.getImage();
+            if (currentImage != null) {
+                Clipboard clipboard = Clipboard.getSystemClipboard();
+                ClipboardContent content = new ClipboardContent();
+                content.putImage(currentImage);
+                clipboard.setContent(content);
+                System.out.println("Image copied to clipboard.");
+            }
+        });
+        contextMenu.getItems().add(copyItem);
+        currentScrollPane.setContextMenu(contextMenu);
+
+        Button btnNextItem = new Button("Next Item");
+        btnNextItem.setOnAction(this::handleNextItem);
+
+        Button btnClose = new Button("Close");
+        btnClose.setOnAction(this::handleClose);
+
+        currentButtonBox = new HBox();
+        currentButtonBox.getChildren().addAll(btnNextItem, btnClose);
+
+        // Add PDF controls if this is a PDF topic
+        if (currentTopic.isPdf()) {
+            Button btnPrevPage = new Button("Previous Page");
+            Button btnNextPage = new Button("Next Page");
+            Button btnFitToPage = new Button("Fit to Page");
+            Button btnFitToWidth = new Button("Fit to Width");
+
+            btnPrevPage.setOnAction(event -> {
+                if (currentTopic.getCurrentPage() > 1) {
+                    int newPage = currentTopic.getCurrentPage() - 1;
+                    currentTopic.setCurrentPage(newPage);
+                    database.updatePDFPage(currentTopic.getRowId(), newPage);
+
+                    // Re-render the page
+                    try {
+                        PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDF(currentTopic.getPdfPath());
+                        Image newImg = PDFImageRenderer.renderPageToFXImage(pdfInfo, newPage);
+                        currentImageView.setImage(newImg);
+                        System.out.println("Moved to page " + newPage);
+                    } catch (Exception ex) {
+                        System.err.println("Error rendering PDF page: " + ex.getMessage());
+                    }
+                }
+            });
+
+            btnNextPage.setOnAction(event -> {
+                try {
+                    PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDF(currentTopic.getPdfPath());
+                    if (currentTopic.getCurrentPage() < pdfInfo.getTotalPages()) {
+                        int newPage = currentTopic.getCurrentPage() + 1;
+                        currentTopic.setCurrentPage(newPage);
+                        database.updatePDFPage(currentTopic.getRowId(), newPage);
+
+                        // Re-render the page
+                        Image newImg = PDFImageRenderer.renderPageToFXImage(pdfInfo, newPage);
+                        currentImageView.setImage(newImg);
+                        System.out.println("Moved to page " + newPage);
+                    }
+                } catch (Exception ex) {
+                    System.err.println("Error rendering PDF page: " + ex.getMessage());
+                }
+            });
+
+            btnFitToPage.setOnAction(event -> {
+                // Fit image to fill the entire scroll pane
+                currentImageView.setPreserveRatio(true);
+                currentImageView.setFitWidth(currentScrollPane.getWidth() - 20); // Account for padding
+                currentImageView.setFitHeight(currentScrollPane.getHeight() - 20); // Account for padding
+                currentScrollPane.setFitToWidth(false);
+                currentScrollPane.setFitToHeight(false);
+                System.out.println("Fit to page");
+            });
+
+            btnFitToWidth.setOnAction(event -> {
+                // Fit image width to the scroll pane width
+                currentImageView.setPreserveRatio(true);
+                currentImageView.setFitWidth(currentScrollPane.getWidth() - 20); // Account for padding
+                currentImageView.setFitHeight(0); // Let height adjust automatically
+                currentScrollPane.setFitToWidth(false);
+                currentScrollPane.setFitToHeight(false);
+                System.out.println("Fit to width");
+            });
+
+            currentButtonBox.getChildren().addAll(btnPrevPage, btnNextPage, btnFitToPage, btnFitToWidth);
+        }
+
+        currentButtonBox.setSpacing(10);
+        currentButtonBox.setPadding(new Insets(10));
+
+        currentRichTextArea = new RichTextArea();
+        // Load existing content using the database method
+        database.loadContentIntoRichTextArea(currentTopic.getContent(), currentRichTextArea);
+
+        // Approach 1: Model property listener for change detection with debouncing
+        currentRichTextArea.modelProperty().addListener((obs, oldModel, newModel) -> {
+            if (newModel != null) {
+                // For now, we'll rely on focus-based saving as the primary mechanism
+                // since the exact StyledTextModel change listener API needs further research
+                System.out.println("Model changed - content change detection active");
+            }
+        });
+
+        // Approach 2: Focus-based saving (primary mechanism)
+        currentRichTextArea.focusedProperty().addListener((obs, wasFocused, isFocused) -> {
+            if (wasFocused && !isFocused) {
+                // Save immediately when focus is lost
+                if (saveTimer != null) {
+                    saveTimer.stop();
+                }
+                database.updateContent(currentTopic.getRowId(), currentRichTextArea);
+            }
+        });
+
+        // Additional: Keyboard-based debounced saving as backup
+        currentRichTextArea.setOnKeyReleased(event -> {
+            // Restart the save timer on each keystroke
+            if (saveTimer != null) {
+                saveTimer.stop();
+            }
+            saveTimer = new Timeline(new KeyFrame(Duration.seconds(2), saveEvent -> {
+                database.updateContent(currentTopic.getRowId(), currentRichTextArea);
+            }));
+            saveTimer.play();
+        });
+
+        VBox vboxItem = new VBox();
+        vboxItem.getChildren().addAll(
+                currentButtonBox,
+                currentScrollPane,
+                currentRichTextArea);
+        vboxItem.setSpacing(10);
+        vboxItem.setPadding(new Insets(10));
+
+        Scene itemScene = new Scene(vboxItem, 700, 600);
+        itemStage.setScene(itemScene);
+
+        // Bind currentScrollPane max height to 80% of stage height
+        currentScrollPane.maxHeightProperty().bind(itemStage.heightProperty().multiply(0.8));
+
+        itemStage.show();
+
+        System.out.println("Topic window opened.");
     }
 
     private void updatePDFControls() {

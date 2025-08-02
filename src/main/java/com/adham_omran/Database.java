@@ -9,6 +9,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.io.ByteArrayOutputStream;
 import java.io.ByteArrayInputStream;
+import java.util.List;
+import java.util.ArrayList;
 
 import javafx.scene.image.Image;
 import jfx.incubator.scene.control.richtext.RichTextArea;
@@ -225,5 +227,37 @@ public class Database {
             System.err.println("Error updating PDF page: " + e.getMessage());
             e.printStackTrace();
         }
+    }
+    
+    public List<TopicTableData> getAllTopics() {
+        List<TopicTableData> topics = new ArrayList<>();
+        String sql = "SELECT rowid, added_at, scheduled_at, a_factor, priority, title, pdf_path FROM images ORDER BY rowid DESC";
+        
+        try (Connection connection = DriverManager.getConnection(DB_PATH);
+             PreparedStatement pstmt = connection.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+            
+            while (rs.next()) {
+                int id = rs.getInt("rowid");
+                String addedDate = rs.getString("added_at");
+                String scheduledDate = rs.getString("scheduled_at");
+                double aFactor = rs.getDouble("a_factor");
+                double priority = rs.getDouble("priority");
+                String title = rs.getString("title");
+                String pdfPath = rs.getString("pdf_path");
+                
+                // Determine type
+                String type = (pdfPath != null && !pdfPath.trim().isEmpty()) ? "PDF" : "Image";
+                
+                TopicTableData tableData = new TopicTableData(id, type, title, addedDate, scheduledDate, priority, aFactor);
+                topics.add(tableData);
+            }
+            
+        } catch (SQLException e) {
+            System.err.println("Error fetching all topics: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        return topics;
     }
 }
