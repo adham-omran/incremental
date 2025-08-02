@@ -163,10 +163,16 @@ public class Incremental extends Application {
             currentImageView.setFitWidth(600);
             currentImageView.setPreserveRatio(true);
 
-            ScrollPane scrollPane = new ScrollPane();
-            scrollPane.setContent(currentImageView);
-            scrollPane.setFitToWidth(true);
-            scrollPane.setFitToHeight(true);
+            currentScrollPane = new ScrollPane();
+            currentScrollPane.setContent(currentImageView);
+            currentScrollPane.setFitToWidth(true);
+            currentScrollPane.setFitToHeight(true);
+            
+            // Hide scroll pane if no image
+            if (img == null) {
+                currentScrollPane.setVisible(false);
+                currentScrollPane.setManaged(false);
+            }
 
             // Create context menu for image copying
             ContextMenu contextMenu = new ContextMenu();
