@@ -72,9 +72,7 @@ public class Topic {
     }
 
     public void setTopicImage(Image topicImage) {
-        if (topicImage == null) {
-            throw new IllegalArgumentException("Topic image cannot be null");
-        }
+        // Allow null images for topics without images
         this.topicImage = topicImage;
     }
 
