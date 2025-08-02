@@ -91,6 +91,18 @@ public class Incremental extends Application {
             BufferedImage bufferedImage;
             java.awt.Image awtImage = cp.getImageFromClipboard();
 
+            // Check if clipboard contains an image
+            if (awtImage == null) {
+                btnClipboard.setText("No image in clipboard");
+                btnClipboard.setDisable(false);
+                // Reset button text after 3 seconds
+                Timeline resetTimer = new Timeline(new KeyFrame(Duration.seconds(3), resetEvent -> {
+                    btnClipboard.setText(originalString);
+                }));
+                resetTimer.play();
+                return;
+            }
+
             // Convert to BufferedImage if it isn't already
             if (awtImage instanceof BufferedImage) {
                 System.out.println("Conversion Success.");
@@ -117,6 +129,11 @@ public class Incremental extends Application {
             } catch (IOException e) {
                 btnClipboard.setText("Save failed.");
                 btnClipboard.setDisable(false);
+                // Reset button text after 3 seconds
+                Timeline resetTimer = new Timeline(new KeyFrame(Duration.seconds(3), resetEvent -> {
+                    btnClipboard.setText(originalString);
+                }));
+                resetTimer.play();
 
                 e.printStackTrace();
             }
