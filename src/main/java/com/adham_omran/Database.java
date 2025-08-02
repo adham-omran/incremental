@@ -183,4 +183,24 @@ public class Database {
             }
         }
     }
+
+    public void savePDF(String pdfPath) {
+        try (Connection connection = DriverManager.getConnection(DB_PATH);
+             Statement statement = connection.createStatement()) {
+            statement.setQueryTimeout(1);
+
+            String insertSQL = "INSERT INTO images (pdf_path, current_page, added_at, scheduled_at, viewed_at, a_factor, priority) VALUES (?, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 2.0, 0.5)";
+            try (PreparedStatement pstmt = connection.prepareStatement(insertSQL)) {
+                connection.setAutoCommit(false);
+                pstmt.setString(1, pdfPath);
+                pstmt.executeUpdate();
+                connection.commit();
+                System.out.println("PDF saved: " + pdfPath);
+            }
+        } catch (SQLException e) {
+            System.out.println("Error saving PDF: " + e);
+            e.printStackTrace(System.err);
+        }
+    }
+
 }
