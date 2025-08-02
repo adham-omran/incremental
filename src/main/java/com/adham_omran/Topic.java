@@ -29,6 +29,16 @@ public class Topic {
      * Use the parent topic to acquire the source name
      */
     private int topicParent;
+    
+    /**
+     * PDF file path for PDF-based topics
+     */
+    private String pdfPath;
+    
+    /**
+     * Current page number for PDF topics (1-based)
+     */
+    private int currentPage = 1;
 
     // Getters
     public double getAFactor() {
@@ -49,6 +59,18 @@ public class Topic {
 
     public int getRowId() {
         return rowId;
+    }
+    
+    public String getPdfPath() {
+        return pdfPath;
+    }
+    
+    public int getCurrentPage() {
+        return currentPage;
+    }
+    
+    public boolean isPdf() {
+        return pdfPath != null && !pdfPath.trim().isEmpty();
     }
 
     // Setters with validation
@@ -81,6 +103,17 @@ public class Topic {
             throw new IllegalArgumentException("Row ID cannot bet less than 1.");
         }
         this.rowId = rowId;
+    }
+    
+    public void setPdfPath(String pdfPath) {
+        this.pdfPath = pdfPath;
+    }
+    
+    public void setCurrentPage(int currentPage) {
+        if (currentPage < 1) {
+            throw new IllegalArgumentException("Page number must be at least 1");
+        }
+        this.currentPage = currentPage;
     }
 
     /* Methods */
