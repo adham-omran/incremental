@@ -8,18 +8,14 @@ import javafx.scene.control.Button;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
-import javafx.scene.control.TextInputDialog;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
 import javafx.scene.robot.Robot;
-import javafx.scene.layout.Pane;
-import javafx.scene.shape.Rectangle;
 import javafx.event.ActionEvent;
 import javafx.scene.control.ScrollPane;
 import java.awt.Graphics2D;
@@ -27,12 +23,10 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import javax.imageio.ImageIO;
 import jfx.incubator.scene.control.richtext.RichTextArea;
-import jfx.incubator.scene.control.richtext.model.StyleAttributeMap;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.input.Clipboard;
@@ -76,12 +70,10 @@ public class Incremental extends Application {
         Button btnClipboard = new Button("Save from Clipboard");
         Button btnAddPDF = new Button("Add PDF");
         Button btnTable = new Button("View Table");
-        Button btnNext = new Button("Next Item");
+        Button btnNext = new Button("Next Topic");
 
         TextField txtInput = new TextField("Enter ID");
         Button btnTopicWithId = new Button("Open Topic with ID: ");
-
-        RichTextArea rta = new RichTextArea();
 
         btnClipboard.setOnAction(event -> {
             // Save to DB
@@ -146,8 +138,7 @@ public class Incremental extends Application {
             FileChooser fileChooser = new FileChooser();
             fileChooser.setTitle("Select PDF File");
             fileChooser.getExtensionFilters().add(
-                new FileChooser.ExtensionFilter("PDF Files", "*.pdf")
-            );
+                    new FileChooser.ExtensionFilter("PDF Files", "*.pdf"));
 
             File selectedFile = fileChooser.showOpenDialog(stage);
             if (selectedFile != null) {
@@ -645,7 +636,7 @@ public class Incremental extends Application {
             }
             // Always load the topic's content into the RichTextArea
             database.loadContentIntoRichTextArea(currentTopic.getContent(), currentRichTextArea);
-            
+
             // Update PDF controls based on the new topic
             updatePDFControls();
         } else {
@@ -667,28 +658,32 @@ public class Incremental extends Application {
         Stage stage = (Stage) source.getScene().getWindow();
         stage.close();
     }
-    
+
     private void updatePDFControls() {
-        if (currentButtonBox == null) return;
-        
-        // Remove any existing PDF controls (everything after the first 2 buttons: Next Item and Close)
+        if (currentButtonBox == null)
+            return;
+
+        // Remove any existing PDF controls (everything after the first 2
+        // buttons: Next Item and Close)
         if (currentButtonBox.getChildren().size() > 2) {
-            currentButtonBox.getChildren().subList(2, currentButtonBox.getChildren().size()).clear();
+            currentButtonBox.getChildren()
+                    .subList(2, currentButtonBox.getChildren().size())
+                    .clear();
         }
-        
+
         // Add PDF controls if this is a PDF topic
         if (currentTopic != null && currentTopic.isPdf()) {
             Button btnPrevPage = new Button("Previous Page");
             Button btnNextPage = new Button("Next Page");
             Button btnFitToPage = new Button("Fit to Page");
             Button btnFitToWidth = new Button("Fit to Width");
-            
+
             btnPrevPage.setOnAction(event -> {
                 if (currentTopic.getCurrentPage() > 1) {
                     int newPage = currentTopic.getCurrentPage() - 1;
                     currentTopic.setCurrentPage(newPage);
                     database.updatePDFPage(currentTopic.getRowId(), newPage);
-                    
+
                     // Re-render the page
                     try {
                         PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDF(currentTopic.getPdfPath());
@@ -700,7 +695,7 @@ public class Incremental extends Application {
                     }
                 }
             });
-            
+
             btnNextPage.setOnAction(event -> {
                 try {
                     PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDF(currentTopic.getPdfPath());
@@ -708,7 +703,7 @@ public class Incremental extends Application {
                         int newPage = currentTopic.getCurrentPage() + 1;
                         currentTopic.setCurrentPage(newPage);
                         database.updatePDFPage(currentTopic.getRowId(), newPage);
-                        
+
                         // Re-render the page
                         Image newImg = PDFImageRenderer.renderPageToFXImage(pdfInfo, newPage);
                         currentImageView.setImage(newImg);
@@ -718,7 +713,7 @@ public class Incremental extends Application {
                     System.err.println("Error rendering PDF page: " + ex.getMessage());
                 }
             });
-            
+
             btnFitToPage.setOnAction(event -> {
                 // Fit image to fill the entire scroll pane
                 currentImageView.setPreserveRatio(true);
@@ -728,7 +723,7 @@ public class Incremental extends Application {
                 currentScrollPane.setFitToHeight(false);
                 System.out.println("Fit to page");
             });
-            
+
             btnFitToWidth.setOnAction(event -> {
                 // Fit image width to the scroll pane width
                 currentImageView.setPreserveRatio(true);
@@ -738,7 +733,7 @@ public class Incremental extends Application {
                 currentScrollPane.setFitToHeight(false);
                 System.out.println("Fit to width");
             });
-            
+
             currentButtonBox.getChildren().addAll(btnPrevPage, btnNextPage, btnFitToPage, btnFitToWidth);
         }
     }
