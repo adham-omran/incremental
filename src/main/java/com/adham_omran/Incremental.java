@@ -188,7 +188,7 @@ public class Incremental extends Application {
                 }
             });
             contextMenu.getItems().add(copyItem);
-            scrollPane.setContextMenu(contextMenu);
+            currentScrollPane.setContextMenu(contextMenu);
 
             Button btnNextItem = new Button("Next Item");
             btnNextItem.setOnAction(this::handleNextItem);
@@ -240,7 +240,7 @@ public class Incremental extends Application {
             VBox vboxItem = new VBox();
             vboxItem.getChildren().addAll(
                     hboxItem,
-                    scrollPane,
+                    currentScrollPane,
                     currentRichTextArea);
             vboxItem.setSpacing(10);
             vboxItem.setPadding(new Insets(10));
@@ -248,8 +248,8 @@ public class Incremental extends Application {
             Scene itemScene = new Scene(vboxItem, 700, 600);
             itemStage.setScene(itemScene);
 
-            // Bind scrollPane max height to 80% of stage height
-            scrollPane.maxHeightProperty().bind(itemStage.heightProperty().multiply(0.8));
+            // Bind currentScrollPane max height to 80% of stage height
+            currentScrollPane.maxHeightProperty().bind(itemStage.heightProperty().multiply(0.8));
 
             itemStage.show();
 
@@ -273,10 +273,16 @@ public class Incremental extends Application {
             currentImageView.setFitWidth(600);
             currentImageView.setPreserveRatio(true);
 
-            ScrollPane scrollPane = new ScrollPane();
-            scrollPane.setContent(currentImageView);
-            scrollPane.setFitToWidth(true);
-            scrollPane.setFitToHeight(true);
+            currentScrollPane = new ScrollPane();
+            currentScrollPane.setContent(currentImageView);
+            currentScrollPane.setFitToWidth(true);
+            currentScrollPane.setFitToHeight(true);
+            
+            // Hide scroll pane if no image
+            if (img == null) {
+                currentScrollPane.setVisible(false);
+                currentScrollPane.setManaged(false);
+            }
 
             // Create context menu for image copying
             ContextMenu contextMenu = new ContextMenu();
@@ -292,7 +298,7 @@ public class Incremental extends Application {
                 }
             });
             contextMenu.getItems().add(copyItem);
-            scrollPane.setContextMenu(contextMenu);
+            currentScrollPane.setContextMenu(contextMenu);
 
             Button btnNextItem = new Button("Next Item");
             btnNextItem.setOnAction(this::handleNextItem);
@@ -344,7 +350,7 @@ public class Incremental extends Application {
             VBox vboxItem = new VBox();
             vboxItem.getChildren().addAll(
                     hboxItem,
-                    scrollPane,
+                    currentScrollPane,
                     currentRichTextArea);
             vboxItem.setSpacing(10);
             vboxItem.setPadding(new Insets(10));
@@ -352,8 +358,8 @@ public class Incremental extends Application {
             Scene itemScene = new Scene(vboxItem, 700, 600);
             itemStage.setScene(itemScene);
 
-            // Bind scrollPane max height to 80% of stage height
-            scrollPane.maxHeightProperty().bind(itemStage.heightProperty().multiply(0.8));
+            // Bind currentScrollPane max height to 80% of stage height
+            currentScrollPane.maxHeightProperty().bind(itemStage.heightProperty().multiply(0.8));
 
             itemStage.show();
 
@@ -388,14 +394,20 @@ public class Incremental extends Application {
         currentTopic = database.nextTopic();
         if (currentTopic != null) {
             Image nextImg = currentTopic.getTopicImage();
-            if (currentImageView != null && nextImg != null) {
+            if (nextImg != null) {
+                // Topic has an image - show it
                 currentImageView.setImage(nextImg);
-                // Load the new topic's content into the RichTextArea
-                database.loadContentIntoRichTextArea(currentTopic.getContent(), currentRichTextArea);
+                currentScrollPane.setVisible(true);
+                currentScrollPane.setManaged(true);
                 System.out.println("Next image and content loaded for rowId: " + currentTopic.getRowId());
             } else {
-                System.out.println("Image view or image is null.");
+                // Topic has no image - hide the scroll pane
+                currentScrollPane.setVisible(false);
+                currentScrollPane.setManaged(false);
+                System.out.println("Next content loaded (no image) for rowId: " + currentTopic.getRowId());
             }
+            // Always load the topic's content into the RichTextArea
+            database.loadContentIntoRichTextArea(currentTopic.getContent(), currentRichTextArea);
         } else {
             System.out.println("No more topics available.");
         }
