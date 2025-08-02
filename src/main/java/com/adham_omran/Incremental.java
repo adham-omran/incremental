@@ -47,6 +47,7 @@ import javafx.util.Duration;
 public class Incremental extends Application {
 
     private ImageView currentImageView;
+    private ScrollPane currentScrollPane;
     private Timeline saveTimer;
     private Database database;
     private RichTextArea currentRichTextArea;
