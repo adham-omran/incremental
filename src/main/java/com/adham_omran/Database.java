@@ -203,4 +203,21 @@ public class Database {
         }
     }
 
+    public void updatePDFPage(int rowid, int pageNumber) {
+        String sql = "UPDATE images SET current_page = ? WHERE rowid = ?";
+
+        try (Connection connection = DriverManager.getConnection(DB_PATH);
+             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+
+            pstmt.setInt(1, pageNumber);
+            pstmt.setInt(2, rowid);
+            pstmt.executeUpdate();
+
+            System.out.println("Updated PDF page for rowid " + rowid + " to page " + pageNumber);
+
+        } catch (SQLException e) {
+            System.err.println("Error updating PDF page: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
 }
