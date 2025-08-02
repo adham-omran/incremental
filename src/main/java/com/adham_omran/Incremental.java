@@ -40,6 +40,7 @@ import javafx.scene.input.ClipboardContent;
 import javafx.animation.Timeline;
 import javafx.animation.KeyFrame;
 import javafx.util.Duration;
+import javafx.stage.FileChooser;
 
 /**
  * JavaFX App
@@ -72,6 +73,7 @@ public class Incremental extends Application {
         GridPane gp = new GridPane();
 
         Button btnClipboard = new Button("Save from Clipboard");
+        Button btnAddPDF = new Button("Add PDF");
         Button btnTable = new Button("View Table");
         Button btnNext = new Button("Next Item");
 
@@ -136,6 +138,45 @@ public class Incremental extends Application {
                 resetTimer.play();
 
                 e.printStackTrace();
+            }
+        });
+
+        btnAddPDF.setOnAction(event -> {
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Select PDF File");
+            fileChooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("PDF Files", "*.pdf")
+            );
+
+            File selectedFile = fileChooser.showOpenDialog(stage);
+            if (selectedFile != null) {
+                Database dbDatabase = new Database();
+                String originalText = btnAddPDF.getText();
+                btnAddPDF.setText("Loading...");
+                btnAddPDF.setDisable(true);
+
+                try {
+                    dbDatabase.savePDF(selectedFile.getAbsolutePath());
+                    btnAddPDF.setText("PDF Loaded!");
+
+                    // Reset button after 2 seconds
+                    Timeline resetTimer = new Timeline(new KeyFrame(Duration.seconds(2), resetEvent -> {
+                        btnAddPDF.setText(originalText);
+                        btnAddPDF.setDisable(false);
+                    }));
+                    resetTimer.play();
+
+                } catch (Exception e) {
+                    btnAddPDF.setText("Load Failed");
+                    btnAddPDF.setDisable(false);
+
+                    Timeline resetTimer = new Timeline(new KeyFrame(Duration.seconds(2), resetEvent -> {
+                        btnAddPDF.setText(originalText);
+                    }));
+                    resetTimer.play();
+
+                    e.printStackTrace();
+                }
             }
         });
 
