@@ -211,13 +211,27 @@ public class Incremental extends Application {
                 return;
             }
 
-            Image img = currentTopic.getTopicImage();
             Stage itemStage = new Stage();
             itemStage.setTitle("Item");
 
             currentImageView = new ImageView();
-            currentImageView.setImage(img);
 
+            Image img = null;
+            if (currentTopic.isPdf()) {
+                // Render PDF page
+                try {
+                    PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDF(currentTopic.getPdfPath());
+                    img = PDFImageRenderer.renderPageToFXImage(pdfInfo, currentTopic.getCurrentPage());
+                    System.out.println("Rendered PDF page " + currentTopic.getCurrentPage());
+                } catch (Exception ex) {
+                    System.err.println("Error rendering PDF: " + ex.getMessage());
+                    ex.printStackTrace();
+                }
+            } else {
+                img = currentTopic.getTopicImage();
+            }
+
+            currentImageView.setImage(img);
             currentImageView.setFitWidth(600);
             currentImageView.setPreserveRatio(true);
 
@@ -225,7 +239,7 @@ public class Incremental extends Application {
             currentScrollPane.setContent(currentImageView);
             currentScrollPane.setFitToWidth(true);
             currentScrollPane.setFitToHeight(true);
-            
+
             // Hide scroll pane if no image
             if (img == null) {
                 currentScrollPane.setVisible(false);
@@ -256,6 +270,73 @@ public class Incremental extends Application {
 
             HBox hboxItem = new HBox();
             hboxItem.getChildren().addAll(btnNextItem, btnClose);
+
+            // Add PDF controls if this is a PDF topic
+            if (currentTopic.isPdf()) {
+                Button btnPrevPage = new Button("Previous Page");
+                Button btnNextPage = new Button("Next Page");
+                Button btnFitToPage = new Button("Fit to Page");
+                Button btnFitToWidth = new Button("Fit to Width");
+
+                btnPrevPage.setOnAction(event -> {
+                    if (currentTopic.getCurrentPage() > 1) {
+                        int newPage = currentTopic.getCurrentPage() - 1;
+                        currentTopic.setCurrentPage(newPage);
+                        database.updatePDFPage(currentTopic.getRowId(), newPage);
+
+                        // Re-render the page
+                        try {
+                            PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDF(currentTopic.getPdfPath());
+                            Image newImg = PDFImageRenderer.renderPageToFXImage(pdfInfo, newPage);
+                            currentImageView.setImage(newImg);
+                            System.out.println("Moved to page " + newPage);
+                        } catch (Exception ex) {
+                            System.err.println("Error rendering PDF page: " + ex.getMessage());
+                        }
+                    }
+                });
+
+                btnNextPage.setOnAction(event -> {
+                    try {
+                        PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDF(currentTopic.getPdfPath());
+                        if (currentTopic.getCurrentPage() < pdfInfo.getTotalPages()) {
+                            int newPage = currentTopic.getCurrentPage() + 1;
+                            currentTopic.setCurrentPage(newPage);
+                            database.updatePDFPage(currentTopic.getRowId(), newPage);
+
+                            // Re-render the page
+                            Image newImg = PDFImageRenderer.renderPageToFXImage(pdfInfo, newPage);
+                            currentImageView.setImage(newImg);
+                            System.out.println("Moved to page " + newPage);
+                        }
+                    } catch (Exception ex) {
+                        System.err.println("Error rendering PDF page: " + ex.getMessage());
+                    }
+                });
+
+                btnFitToPage.setOnAction(event -> {
+                    // Fit image to fill the entire scroll pane
+                    currentImageView.setPreserveRatio(true);
+                    currentImageView.setFitWidth(currentScrollPane.getWidth() - 20); // Account for padding
+                    currentImageView.setFitHeight(currentScrollPane.getHeight() - 20); // Account for padding
+                    currentScrollPane.setFitToWidth(false);
+                    currentScrollPane.setFitToHeight(false);
+                    System.out.println("Fit to page");
+                });
+
+                btnFitToWidth.setOnAction(event -> {
+                    // Fit image width to the scroll pane width
+                    currentImageView.setPreserveRatio(true);
+                    currentImageView.setFitWidth(currentScrollPane.getWidth() - 20); // Account for padding
+                    currentImageView.setFitHeight(0); // Let height adjust automatically
+                    currentScrollPane.setFitToWidth(false);
+                    currentScrollPane.setFitToHeight(false);
+                    System.out.println("Fit to width");
+                });
+
+                hboxItem.getChildren().addAll(btnPrevPage, btnNextPage, btnFitToPage, btnFitToWidth);
+            }
+
             hboxItem.setSpacing(10);
             hboxItem.setPadding(new Insets(10));
 
@@ -321,13 +402,27 @@ public class Incremental extends Application {
                 return;
             }
 
-            Image img = currentTopic.getTopicImage();
             Stage itemStage = new Stage();
             itemStage.setTitle("Item");
 
             currentImageView = new ImageView();
-            currentImageView.setImage(img);
 
+            Image img = null;
+            if (currentTopic.isPdf()) {
+                // Render PDF page
+                try {
+                    PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDF(currentTopic.getPdfPath());
+                    img = PDFImageRenderer.renderPageToFXImage(pdfInfo, currentTopic.getCurrentPage());
+                    System.out.println("Rendered PDF page " + currentTopic.getCurrentPage());
+                } catch (Exception ex) {
+                    System.err.println("Error rendering PDF: " + ex.getMessage());
+                    ex.printStackTrace();
+                }
+            } else {
+                img = currentTopic.getTopicImage();
+            }
+
+            currentImageView.setImage(img);
             currentImageView.setFitWidth(600);
             currentImageView.setPreserveRatio(true);
 
@@ -335,7 +430,7 @@ public class Incremental extends Application {
             currentScrollPane.setContent(currentImageView);
             currentScrollPane.setFitToWidth(true);
             currentScrollPane.setFitToHeight(true);
-            
+
             // Hide scroll pane if no image
             if (img == null) {
                 currentScrollPane.setVisible(false);
@@ -366,6 +461,73 @@ public class Incremental extends Application {
 
             HBox hboxItem = new HBox();
             hboxItem.getChildren().addAll(btnNextItem, btnClose);
+
+            // Add PDF controls if this is a PDF topic
+            if (currentTopic.isPdf()) {
+                Button btnPrevPage = new Button("Previous Page");
+                Button btnNextPage = new Button("Next Page");
+                Button btnFitToPage = new Button("Fit to Page");
+                Button btnFitToWidth = new Button("Fit to Width");
+
+                btnPrevPage.setOnAction(event -> {
+                    if (currentTopic.getCurrentPage() > 1) {
+                        int newPage = currentTopic.getCurrentPage() - 1;
+                        currentTopic.setCurrentPage(newPage);
+                        database.updatePDFPage(currentTopic.getRowId(), newPage);
+
+                        // Re-render the page
+                        try {
+                            PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDF(currentTopic.getPdfPath());
+                            Image newImg = PDFImageRenderer.renderPageToFXImage(pdfInfo, newPage);
+                            currentImageView.setImage(newImg);
+                            System.out.println("Moved to page " + newPage);
+                        } catch (Exception ex) {
+                            System.err.println("Error rendering PDF page: " + ex.getMessage());
+                        }
+                    }
+                });
+
+                btnNextPage.setOnAction(event -> {
+                    try {
+                        PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDF(currentTopic.getPdfPath());
+                        if (currentTopic.getCurrentPage() < pdfInfo.getTotalPages()) {
+                            int newPage = currentTopic.getCurrentPage() + 1;
+                            currentTopic.setCurrentPage(newPage);
+                            database.updatePDFPage(currentTopic.getRowId(), newPage);
+
+                            // Re-render the page
+                            Image newImg = PDFImageRenderer.renderPageToFXImage(pdfInfo, newPage);
+                            currentImageView.setImage(newImg);
+                            System.out.println("Moved to page " + newPage);
+                        }
+                    } catch (Exception ex) {
+                        System.err.println("Error rendering PDF page: " + ex.getMessage());
+                    }
+                });
+
+                btnFitToPage.setOnAction(event -> {
+                    // Fit image to fill the entire scroll pane
+                    currentImageView.setPreserveRatio(true);
+                    currentImageView.setFitWidth(currentScrollPane.getWidth() - 20); // Account for padding
+                    currentImageView.setFitHeight(currentScrollPane.getHeight() - 20); // Account for padding
+                    currentScrollPane.setFitToWidth(false);
+                    currentScrollPane.setFitToHeight(false);
+                    System.out.println("Fit to page");
+                });
+
+                btnFitToWidth.setOnAction(event -> {
+                    // Fit image width to the scroll pane width
+                    currentImageView.setPreserveRatio(true);
+                    currentImageView.setFitWidth(currentScrollPane.getWidth() - 20); // Account for padding
+                    currentImageView.setFitHeight(0); // Let height adjust automatically
+                    currentScrollPane.setFitToWidth(false);
+                    currentScrollPane.setFitToHeight(false);
+                    System.out.println("Fit to width");
+                });
+
+                hboxItem.getChildren().addAll(btnPrevPage, btnNextPage, btnFitToPage, btnFitToWidth);
+            }
+
             hboxItem.setSpacing(10);
             hboxItem.setPadding(new Insets(10));
 
@@ -429,8 +591,9 @@ public class Incremental extends Application {
         gp.setVgap(8);
 
         gp.add(btnClipboard, 0, 1);
-        gp.add(btnTable, 1, 1);
-        gp.add(btnNext, 2, 1);
+        gp.add(btnAddPDF, 1, 1);
+        gp.add(btnTable, 2, 1);
+        gp.add(btnNext, 3, 1);
         gp.add(btnTopicWithId, 0, 2);
         gp.add(txtInput, 1, 2);
 
@@ -451,13 +614,28 @@ public class Incremental extends Application {
         // Load next topic
         currentTopic = database.nextTopic();
         if (currentTopic != null) {
-            Image nextImg = currentTopic.getTopicImage();
+            Image nextImg = null;
+
+            if (currentTopic.isPdf()) {
+                // Render PDF page
+                try {
+                    PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDF(currentTopic.getPdfPath());
+                    nextImg = PDFImageRenderer.renderPageToFXImage(pdfInfo, currentTopic.getCurrentPage());
+                    System.out.println("Rendered PDF page " + currentTopic.getCurrentPage());
+                } catch (Exception ex) {
+                    System.err.println("Error rendering PDF: " + ex.getMessage());
+                    ex.printStackTrace();
+                }
+            } else {
+                nextImg = currentTopic.getTopicImage();
+            }
+
             if (nextImg != null) {
-                // Topic has an image - show it
+                // Topic has an image or PDF - show it
                 currentImageView.setImage(nextImg);
                 currentScrollPane.setVisible(true);
                 currentScrollPane.setManaged(true);
-                System.out.println("Next image and content loaded for rowId: " + currentTopic.getRowId());
+                System.out.println("Next image/PDF and content loaded for rowId: " + currentTopic.getRowId());
             } else {
                 // Topic has no image - hide the scroll pane
                 currentScrollPane.setVisible(false);
