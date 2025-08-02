@@ -15,6 +15,8 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.Tooltip;
 import javafx.stage.Stage;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -68,23 +70,89 @@ public class Incremental extends Application {
         // Initialize database
         database = new Database();
 
-        // Stage <- Scene <- Pane
-        GridPane gp = new GridPane();
+        // Create main container with improved layout
+        VBox mainContainer = new VBox();
+        mainContainer.getStyleClass().add("main-container");
 
+        // Content Actions Section
+        VBox contentSection = new VBox();
+        contentSection.getStyleClass().add("section-container");
+        
+        Label contentLabel = new Label("Content Actions");
+        contentLabel.getStyleClass().add("section-title");
+        
+        HBox contentButtons = new HBox();
+        contentButtons.getStyleClass().add("button-group");
+        
         Button btnClipboard = new Button("Save from Clipboard");
+        btnClipboard.getStyleClass().add("primary-button");
+        btnClipboard.setTooltip(new Tooltip("Save an image from your clipboard to the database"));
+        
         Button btnAddPDF = new Button("Add PDF");
-        Button btnTable = new Button("View Table");
-        Button btnNext = new Button("Next Topic");
+        btnAddPDF.getStyleClass().add("secondary-button");
+        btnAddPDF.setTooltip(new Tooltip("Import a PDF file for study"));
+        
+        contentButtons.getChildren().addAll(btnClipboard, btnAddPDF);
+        contentSection.getChildren().addAll(contentLabel, contentButtons);
 
-        TextField txtInput = new TextField("Enter ID");
-        Button btnTopicWithId = new Button("Open Topic with ID: ");
+        // Navigation Section
+        VBox navigationSection = new VBox();
+        navigationSection.getStyleClass().add("section-container");
+        
+        Label navigationLabel = new Label("Navigation");
+        navigationLabel.getStyleClass().add("section-title");
+        
+        HBox navigationButtons = new HBox();
+        navigationButtons.getStyleClass().add("button-group");
+        
+        Button btnNext = new Button("Next Topic");
+        btnNext.getStyleClass().add("secondary-button");
+        btnNext.setTooltip(new Tooltip("Open the next topic scheduled for review"));
+        
+        Button btnTable = new Button("View Table");
+        btnTable.getStyleClass().add("tertiary-button");
+        btnTable.setTooltip(new Tooltip("View all topics in a sortable table"));
+        
+        navigationButtons.getChildren().addAll(btnNext, btnTable);
+        navigationSection.getChildren().addAll(navigationLabel, navigationButtons);
+
+        // Direct Access Section
+        VBox accessSection = new VBox();
+        accessSection.getStyleClass().add("section-container");
+        
+        Label accessLabel = new Label("Direct Access");
+        accessLabel.getStyleClass().add("section-title");
+        
+        HBox accessForm = new HBox();
+        accessForm.getStyleClass().add("form-group");
+        
+        Label idLabel = new Label("Topic ID:");
+        TextField txtInput = new TextField();
+        txtInput.setPromptText("Enter topic ID...");
+        txtInput.getStyleClass().add("text-field");
+        txtInput.setTooltip(new Tooltip("Enter a specific topic ID to open directly"));
+        
+        Button btnTopicWithId = new Button("🔍 Open");
+        btnTopicWithId.getStyleClass().add("tertiary-button");
+        btnTopicWithId.setTooltip(new Tooltip("Open the topic with the specified ID"));
+        
+        // Add Enter key support for the ID field
+        txtInput.setOnAction(event -> btnTopicWithId.fire());
+        
+        accessForm.getChildren().addAll(idLabel, txtInput, btnTopicWithId);
+        accessSection.getChildren().addAll(accessLabel, accessForm);
+
+        // Add all sections to main container
+        mainContainer.getChildren().addAll(contentSection, navigationSection, accessSection);
 
         btnClipboard.setOnAction(event -> {
             // Save to DB
             Database dbDatabase = new Database();
             ClipboardUtils cp = new ClipboardUtils();
             String originalString = btnClipboard.getText();
-            btnClipboard.setText("Saving...");
+            btnClipboard.setText("💾 Saving...");
+            btnClipboard.getStyleClass().removeAll("primary-button");
+            btnClipboard.getStyleClass().add("loading-button");
             btnClipboard.setDisable(true);
 
             BufferedImage bufferedImage;
@@ -92,11 +160,15 @@ public class Incremental extends Application {
 
             // Check if clipboard contains an image
             if (awtImage == null) {
-                btnClipboard.setText("No image in clipboard");
+                btnClipboard.setText("❌ No image in clipboard");
+                btnClipboard.getStyleClass().removeAll("loading-button");
+                btnClipboard.getStyleClass().add("error-button");
                 btnClipboard.setDisable(false);
                 // Reset button text after 3 seconds
                 Timeline resetTimer = new Timeline(new KeyFrame(Duration.seconds(3), resetEvent -> {
                     btnClipboard.setText(originalString);
+                    btnClipboard.getStyleClass().removeAll("error-button");
+                    btnClipboard.getStyleClass().add("primary-button");
                 }));
                 resetTimer.play();
                 return;
@@ -122,15 +194,29 @@ public class Incremental extends Application {
                 ImageIO.write(bufferedImage, "png", os);
                 InputStream fis = new ByteArrayInputStream(os.toByteArray());
                 dbDatabase.saveImage(fis, os.size());
-                btnClipboard.setText(originalString);
+                btnClipboard.setText("✅ Saved!");
+                btnClipboard.getStyleClass().removeAll("loading-button");
+                btnClipboard.getStyleClass().add("success-button");
                 btnClipboard.setDisable(false);
+                
+                // Reset button after 2 seconds
+                Timeline resetTimer = new Timeline(new KeyFrame(Duration.seconds(2), resetEvent -> {
+                    btnClipboard.setText(originalString);
+                    btnClipboard.getStyleClass().removeAll("success-button");
+                    btnClipboard.getStyleClass().add("primary-button");
+                }));
+                resetTimer.play();
 
             } catch (IOException e) {
-                btnClipboard.setText("Save failed.");
+                btnClipboard.setText("❌ Save failed");
+                btnClipboard.getStyleClass().removeAll("loading-button");
+                btnClipboard.getStyleClass().add("error-button");
                 btnClipboard.setDisable(false);
                 // Reset button text after 3 seconds
                 Timeline resetTimer = new Timeline(new KeyFrame(Duration.seconds(3), resetEvent -> {
                     btnClipboard.setText(originalString);
+                    btnClipboard.getStyleClass().removeAll("error-button");
+                    btnClipboard.getStyleClass().add("primary-button");
                 }));
                 resetTimer.play();
 
@@ -148,26 +234,36 @@ public class Incremental extends Application {
             if (selectedFile != null) {
                 Database dbDatabase = new Database();
                 String originalText = btnAddPDF.getText();
-                btnAddPDF.setText("Loading...");
+                btnAddPDF.setText("📥 Loading...");
+                btnAddPDF.getStyleClass().removeAll("secondary-button");
+                btnAddPDF.getStyleClass().add("loading-button");
                 btnAddPDF.setDisable(true);
 
                 try {
                     dbDatabase.savePDF(selectedFile.getAbsolutePath());
-                    btnAddPDF.setText("PDF Loaded!");
+                    btnAddPDF.setText("✅ PDF Loaded!");
+                    btnAddPDF.getStyleClass().removeAll("loading-button");
+                    btnAddPDF.getStyleClass().add("success-button");
 
                     // Reset button after 2 seconds
                     Timeline resetTimer = new Timeline(new KeyFrame(Duration.seconds(2), resetEvent -> {
                         btnAddPDF.setText(originalText);
+                        btnAddPDF.getStyleClass().removeAll("success-button");
+                        btnAddPDF.getStyleClass().add("secondary-button");
                         btnAddPDF.setDisable(false);
                     }));
                     resetTimer.play();
 
                 } catch (Exception e) {
-                    btnAddPDF.setText("Load Failed");
+                    btnAddPDF.setText("❌ Load Failed");
+                    btnAddPDF.getStyleClass().removeAll("loading-button");
+                    btnAddPDF.getStyleClass().add("error-button");
                     btnAddPDF.setDisable(false);
 
                     Timeline resetTimer = new Timeline(new KeyFrame(Duration.seconds(2), resetEvent -> {
                         btnAddPDF.setText(originalText);
+                        btnAddPDF.getStyleClass().removeAll("error-button");
+                        btnAddPDF.getStyleClass().add("secondary-button");
                     }));
                     resetTimer.play();
 
@@ -255,401 +351,46 @@ public class Incremental extends Application {
             stageTable.show();
         });
 
-        btnNext.setOnAction(e -> {
-            currentTopic = database.nextTopic();
-            if (currentTopic == null) {
-                System.out.println("No topics available.");
-                return;
-            }
-
-            Stage itemStage = new Stage();
-            itemStage.setTitle("Item");
-
-            currentImageView = new ImageView();
-
-            Image img = null;
-            if (currentTopic.isPdf()) {
-                // Render PDF page
-                try {
-                    PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDF(currentTopic.getPdfPath());
-                    img = PDFImageRenderer.renderPageToFXImage(pdfInfo, currentTopic.getCurrentPage());
-                    System.out.println("Rendered PDF page " + currentTopic.getCurrentPage());
-                } catch (Exception ex) {
-                    System.err.println("Error rendering PDF: " + ex.getMessage());
-                    ex.printStackTrace();
-                }
-            } else {
-                img = currentTopic.getTopicImage();
-            }
-
-            currentImageView.setImage(img);
-            currentImageView.setFitWidth(600);
-            currentImageView.setPreserveRatio(true);
-
-            currentScrollPane = new ScrollPane();
-            currentScrollPane.setContent(currentImageView);
-            currentScrollPane.setFitToWidth(true);
-            currentScrollPane.setFitToHeight(true);
-
-            // Hide scroll pane if no image
-            if (img == null) {
-                currentScrollPane.setVisible(false);
-                currentScrollPane.setManaged(false);
-            }
-
-            // Create context menu for image copying
-            ContextMenu contextMenu = new ContextMenu();
-            MenuItem copyItem = new MenuItem("Copy Image");
-            copyItem.setOnAction(event -> {
-                Image currentImage = currentImageView.getImage();
-                if (currentImage != null) {
-                    Clipboard clipboard = Clipboard.getSystemClipboard();
-                    ClipboardContent content = new ClipboardContent();
-                    content.putImage(currentImage);
-                    clipboard.setContent(content);
-                    System.out.println("Image copied to clipboard.");
-                }
-            });
-            contextMenu.getItems().add(copyItem);
-            currentScrollPane.setContextMenu(contextMenu);
-
-            Button btnNextItem = new Button("Next Item");
-            btnNextItem.setOnAction(this::handleNextItem);
-
-            Button btnClose = new Button("Close");
-            btnClose.setOnAction(this::handleClose);
-
-            currentButtonBox = new HBox();
-            currentButtonBox.getChildren().addAll(btnNextItem, btnClose);
-
-            // Add PDF controls if this is a PDF topic
-            if (currentTopic.isPdf()) {
-                Button btnPrevPage = new Button("Previous Page");
-                Button btnNextPage = new Button("Next Page");
-                Button btnFitToPage = new Button("Fit to Page");
-                Button btnFitToWidth = new Button("Fit to Width");
-
-                btnPrevPage.setOnAction(event -> {
-                    if (currentTopic.getCurrentPage() > 1) {
-                        int newPage = currentTopic.getCurrentPage() - 1;
-                        currentTopic.setCurrentPage(newPage);
-                        database.updatePDFPage(currentTopic.getRowId(), newPage);
-
-                        // Re-render the page
-                        try {
-                            PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDF(currentTopic.getPdfPath());
-                            Image newImg = PDFImageRenderer.renderPageToFXImage(pdfInfo, newPage);
-                            currentImageView.setImage(newImg);
-                            System.out.println("Moved to page " + newPage);
-                        } catch (Exception ex) {
-                            System.err.println("Error rendering PDF page: " + ex.getMessage());
-                        }
-                    }
-                });
-
-                btnNextPage.setOnAction(event -> {
-                    try {
-                        PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDF(currentTopic.getPdfPath());
-                        if (currentTopic.getCurrentPage() < pdfInfo.getTotalPages()) {
-                            int newPage = currentTopic.getCurrentPage() + 1;
-                            currentTopic.setCurrentPage(newPage);
-                            database.updatePDFPage(currentTopic.getRowId(), newPage);
-
-                            // Re-render the page
-                            Image newImg = PDFImageRenderer.renderPageToFXImage(pdfInfo, newPage);
-                            currentImageView.setImage(newImg);
-                            System.out.println("Moved to page " + newPage);
-                        }
-                    } catch (Exception ex) {
-                        System.err.println("Error rendering PDF page: " + ex.getMessage());
-                    }
-                });
-
-                btnFitToPage.setOnAction(event -> {
-                    // Fit image to fill the entire scroll pane
-                    currentImageView.setPreserveRatio(true);
-                    currentImageView.setFitWidth(currentScrollPane.getWidth() - 20); // Account for padding
-                    currentImageView.setFitHeight(currentScrollPane.getHeight() - 20); // Account for padding
-                    currentScrollPane.setFitToWidth(false);
-                    currentScrollPane.setFitToHeight(false);
-                    System.out.println("Fit to page");
-                });
-
-                btnFitToWidth.setOnAction(event -> {
-                    // Fit image width to the scroll pane width
-                    currentImageView.setPreserveRatio(true);
-                    currentImageView.setFitWidth(currentScrollPane.getWidth() - 20); // Account for padding
-                    currentImageView.setFitHeight(0); // Let height adjust automatically
-                    currentScrollPane.setFitToWidth(false);
-                    currentScrollPane.setFitToHeight(false);
-                    System.out.println("Fit to width");
-                });
-
-                currentButtonBox.getChildren().addAll(btnPrevPage, btnNextPage, btnFitToPage, btnFitToWidth);
-            }
-
-            currentButtonBox.setSpacing(10);
-            currentButtonBox.setPadding(new Insets(10));
-
-            currentRichTextArea = new RichTextArea();
-            // Load existing content using the database method
-            database.loadContentIntoRichTextArea(currentTopic.getContent(), currentRichTextArea);
-
-            // Approach 1: Model property listener for change detection with debouncing
-            currentRichTextArea.modelProperty().addListener((obs, oldModel, newModel) -> {
-                if (newModel != null) {
-                    // For now, we'll rely on focus-based saving as the primary mechanism
-                    // since the exact StyledTextModel change listener API needs further research
-                    System.out.println("Model changed - content change detection active");
-                }
-            });
-
-            // Approach 2: Focus-based saving (primary mechanism)
-            currentRichTextArea.focusedProperty().addListener((obs, wasFocused, isFocused) -> {
-                if (wasFocused && !isFocused) {
-                    // Save immediately when focus is lost
-                    if (saveTimer != null) {
-                        saveTimer.stop();
-                    }
-                    database.updateContent(currentTopic.getRowId(), currentRichTextArea);
-                }
-            });
-
-            // Additional: Keyboard-based debounced saving as backup
-            currentRichTextArea.setOnKeyReleased(event -> {
-                // Restart the save timer on each keystroke
-                if (saveTimer != null) {
-                    saveTimer.stop();
-                }
-                saveTimer = new Timeline(new KeyFrame(Duration.seconds(2), saveEvent -> {
-                    database.updateContent(currentTopic.getRowId(), currentRichTextArea);
-                }));
-                saveTimer.play();
-            });
-
-            VBox vboxItem = new VBox();
-            vboxItem.getChildren().addAll(
-                    currentButtonBox,
-                    currentScrollPane,
-                    currentRichTextArea);
-            vboxItem.setSpacing(10);
-            vboxItem.setPadding(new Insets(10));
-
-            Scene itemScene = new Scene(vboxItem, 700, 600);
-            itemStage.setScene(itemScene);
-
-            // Bind currentScrollPane max height to 80% of stage height
-            currentScrollPane.maxHeightProperty().bind(itemStage.heightProperty().multiply(0.8));
-
-            itemStage.show();
-
-            System.out.println("Reading image.");
-        });
+        btnNext.setOnAction(e -> openTopicWindow());
 
         btnTopicWithId.setOnAction(e -> {
-            currentTopic = database.findTopic(Integer.valueOf(txtInput.getText()));
-            if (currentTopic == null) {
-                System.out.println("No topics available.");
+            String inputText = txtInput.getText().trim();
+            if (inputText.isEmpty()) {
+                txtInput.getStyleClass().add("error");
+                txtInput.setPromptText("Please enter a topic ID");
                 return;
             }
-
-            Stage itemStage = new Stage();
-            itemStage.setTitle("Item");
-
-            currentImageView = new ImageView();
-
-            Image img = null;
-            if (currentTopic.isPdf()) {
-                // Render PDF page
-                try {
-                    PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDF(currentTopic.getPdfPath());
-                    img = PDFImageRenderer.renderPageToFXImage(pdfInfo, currentTopic.getCurrentPage());
-                    System.out.println("Rendered PDF page " + currentTopic.getCurrentPage());
-                } catch (Exception ex) {
-                    System.err.println("Error rendering PDF: " + ex.getMessage());
-                    ex.printStackTrace();
+            
+            try {
+                int topicId = Integer.parseInt(inputText);
+                currentTopic = database.findTopic(topicId);
+                if (currentTopic == null) {
+                    txtInput.getStyleClass().add("error");
+                    txtInput.setPromptText("Topic not found");
+                    txtInput.clear();
+                    return;
                 }
-            } else {
-                img = currentTopic.getTopicImage();
+            } catch (NumberFormatException ex) {
+                txtInput.getStyleClass().add("error");
+                txtInput.setPromptText("Please enter a valid number");
+                txtInput.clear();
+                return;
             }
-
-            currentImageView.setImage(img);
-            currentImageView.setFitWidth(600);
-            currentImageView.setPreserveRatio(true);
-
-            currentScrollPane = new ScrollPane();
-            currentScrollPane.setContent(currentImageView);
-            currentScrollPane.setFitToWidth(true);
-            currentScrollPane.setFitToHeight(true);
-
-            // Hide scroll pane if no image
-            if (img == null) {
-                currentScrollPane.setVisible(false);
-                currentScrollPane.setManaged(false);
-            }
-
-            // Create context menu for image copying
-            ContextMenu contextMenu = new ContextMenu();
-            MenuItem copyItem = new MenuItem("Copy Image");
-            copyItem.setOnAction(event -> {
-                Image currentImage = currentImageView.getImage();
-                if (currentImage != null) {
-                    Clipboard clipboard = Clipboard.getSystemClipboard();
-                    ClipboardContent content = new ClipboardContent();
-                    content.putImage(currentImage);
-                    clipboard.setContent(content);
-                    System.out.println("Image copied to clipboard.");
-                }
-            });
-            contextMenu.getItems().add(copyItem);
-            currentScrollPane.setContextMenu(contextMenu);
-
-            Button btnNextItem = new Button("Next Item");
-            btnNextItem.setOnAction(this::handleNextItem);
-
-            Button btnClose = new Button("Close");
-            btnClose.setOnAction(this::handleClose);
-
-            currentButtonBox = new HBox();
-            currentButtonBox.getChildren().addAll(btnNextItem, btnClose);
-
-            // Add PDF controls if this is a PDF topic
-            if (currentTopic.isPdf()) {
-                Button btnPrevPage = new Button("Previous Page");
-                Button btnNextPage = new Button("Next Page");
-                Button btnFitToPage = new Button("Fit to Page");
-                Button btnFitToWidth = new Button("Fit to Width");
-
-                btnPrevPage.setOnAction(event -> {
-                    if (currentTopic.getCurrentPage() > 1) {
-                        int newPage = currentTopic.getCurrentPage() - 1;
-                        currentTopic.setCurrentPage(newPage);
-                        database.updatePDFPage(currentTopic.getRowId(), newPage);
-
-                        // Re-render the page
-                        try {
-                            PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDF(currentTopic.getPdfPath());
-                            Image newImg = PDFImageRenderer.renderPageToFXImage(pdfInfo, newPage);
-                            currentImageView.setImage(newImg);
-                            System.out.println("Moved to page " + newPage);
-                        } catch (Exception ex) {
-                            System.err.println("Error rendering PDF page: " + ex.getMessage());
-                        }
-                    }
-                });
-
-                btnNextPage.setOnAction(event -> {
-                    try {
-                        PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDF(currentTopic.getPdfPath());
-                        if (currentTopic.getCurrentPage() < pdfInfo.getTotalPages()) {
-                            int newPage = currentTopic.getCurrentPage() + 1;
-                            currentTopic.setCurrentPage(newPage);
-                            database.updatePDFPage(currentTopic.getRowId(), newPage);
-
-                            // Re-render the page
-                            Image newImg = PDFImageRenderer.renderPageToFXImage(pdfInfo, newPage);
-                            currentImageView.setImage(newImg);
-                            System.out.println("Moved to page " + newPage);
-                        }
-                    } catch (Exception ex) {
-                        System.err.println("Error rendering PDF page: " + ex.getMessage());
-                    }
-                });
-
-                btnFitToPage.setOnAction(event -> {
-                    // Fit image to fill the entire scroll pane
-                    currentImageView.setPreserveRatio(true);
-                    currentImageView.setFitWidth(currentScrollPane.getWidth() - 20); // Account for padding
-                    currentImageView.setFitHeight(currentScrollPane.getHeight() - 20); // Account for padding
-                    currentScrollPane.setFitToWidth(false);
-                    currentScrollPane.setFitToHeight(false);
-                    System.out.println("Fit to page");
-                });
-
-                btnFitToWidth.setOnAction(event -> {
-                    // Fit image width to the scroll pane width
-                    currentImageView.setPreserveRatio(true);
-                    currentImageView.setFitWidth(currentScrollPane.getWidth() - 20); // Account for padding
-                    currentImageView.setFitHeight(0); // Let height adjust automatically
-                    currentScrollPane.setFitToWidth(false);
-                    currentScrollPane.setFitToHeight(false);
-                    System.out.println("Fit to width");
-                });
-
-                currentButtonBox.getChildren().addAll(btnPrevPage, btnNextPage, btnFitToPage, btnFitToWidth);
-            }
-
-            currentButtonBox.setSpacing(10);
-            currentButtonBox.setPadding(new Insets(10));
-
-            currentRichTextArea = new RichTextArea();
-            // Load existing content using the database method
-            database.loadContentIntoRichTextArea(currentTopic.getContent(), currentRichTextArea);
-
-            // Approach 1: Model property listener for change detection with debouncing
-            currentRichTextArea.modelProperty().addListener((obs, oldModel, newModel) -> {
-                if (newModel != null) {
-                    // For now, we'll rely on focus-based saving as the primary mechanism
-                    // since the exact StyledTextModel change listener API needs further research
-                    System.out.println("Model changed - content change detection active");
-                }
-            });
-
-            // Approach 2: Focus-based saving (primary mechanism)
-            currentRichTextArea.focusedProperty().addListener((obs, wasFocused, isFocused) -> {
-                if (wasFocused && !isFocused) {
-                    // Save immediately when focus is lost
-                    if (saveTimer != null) {
-                        saveTimer.stop();
-                    }
-                    database.updateContent(currentTopic.getRowId(), currentRichTextArea);
-                }
-            });
-
-            // Additional: Keyboard-based debounced saving as backup
-            currentRichTextArea.setOnKeyReleased(event -> {
-                // Restart the save timer on each keystroke
-                if (saveTimer != null) {
-                    saveTimer.stop();
-                }
-                saveTimer = new Timeline(new KeyFrame(Duration.seconds(2), saveEvent -> {
-                    database.updateContent(currentTopic.getRowId(), currentRichTextArea);
-                }));
-                saveTimer.play();
-            });
-
-            VBox vboxItem = new VBox();
-            vboxItem.getChildren().addAll(
-                    currentButtonBox,
-                    currentScrollPane,
-                    currentRichTextArea);
-            vboxItem.setSpacing(10);
-            vboxItem.setPadding(new Insets(10));
-
-            Scene itemScene = new Scene(vboxItem, 700, 600);
-            itemStage.setScene(itemScene);
-
-            // Bind currentScrollPane max height to 80% of stage height
-            currentScrollPane.maxHeightProperty().bind(itemStage.heightProperty().multiply(0.8));
-
-            itemStage.show();
-
-            System.out.println("Reading image.");
+            
+            // Clear any error styling and open the topic
+            txtInput.getStyleClass().remove("error");
+            txtInput.clear();
+            openTopicWindow();
         });
 
-        gp.setPadding(new Insets(10));
-        gp.setHgap(4);
-        gp.setVgap(8);
-
-        gp.add(btnClipboard, 0, 1);
-        gp.add(btnAddPDF, 1, 1);
-        gp.add(btnTable, 2, 1);
-        gp.add(btnNext, 3, 1);
-        gp.add(btnTopicWithId, 0, 2);
-        gp.add(txtInput, 1, 2);
-
-        // var scene = new Scene(new StackPane(label), 640, 480);
-        stage.setScene(new Scene(gp, 640, 480));
+        // Apply CSS styling and create scene
+        Scene scene = new Scene(mainContainer, 800, 700);
+        scene.getStylesheets().add(getClass().getResource("/styles.css").toExternalForm());
+        
+        stage.setTitle("Incremental Learning Application");
+        stage.setScene(scene);
+        stage.setMinWidth(700);
+        stage.setMinHeight(600);
         stage.show();
     }
 
@@ -701,21 +442,6 @@ public class Incremental extends Application {
         } else {
             System.out.println("No more topics available.");
         }
-    }
-
-    private void handleClose(ActionEvent e) {
-        // Save current content before closing
-        if (saveTimer != null) {
-            saveTimer.stop();
-        }
-        if (currentTopic != null && currentRichTextArea != null) {
-            database.updateContent(currentTopic.getRowId(), currentRichTextArea);
-        }
-
-        // Close the window
-        Button source = (Button) e.getSource();
-        Stage stage = (Stage) source.getScene().getWindow();
-        stage.close();
     }
 
     private void openTopicWindow() {
@@ -786,68 +512,7 @@ public class Incremental extends Application {
 
         // Add PDF controls if this is a PDF topic
         if (currentTopic.isPdf()) {
-            Button btnPrevPage = new Button("Previous Page");
-            Button btnNextPage = new Button("Next Page");
-            Button btnFitToPage = new Button("Fit to Page");
-            Button btnFitToWidth = new Button("Fit to Width");
-
-            btnPrevPage.setOnAction(event -> {
-                if (currentTopic.getCurrentPage() > 1) {
-                    int newPage = currentTopic.getCurrentPage() - 1;
-                    currentTopic.setCurrentPage(newPage);
-                    database.updatePDFPage(currentTopic.getRowId(), newPage);
-
-                    // Re-render the page
-                    try {
-                        PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDF(currentTopic.getPdfPath());
-                        Image newImg = PDFImageRenderer.renderPageToFXImage(pdfInfo, newPage);
-                        currentImageView.setImage(newImg);
-                        System.out.println("Moved to page " + newPage);
-                    } catch (Exception ex) {
-                        System.err.println("Error rendering PDF page: " + ex.getMessage());
-                    }
-                }
-            });
-
-            btnNextPage.setOnAction(event -> {
-                try {
-                    PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDF(currentTopic.getPdfPath());
-                    if (currentTopic.getCurrentPage() < pdfInfo.getTotalPages()) {
-                        int newPage = currentTopic.getCurrentPage() + 1;
-                        currentTopic.setCurrentPage(newPage);
-                        database.updatePDFPage(currentTopic.getRowId(), newPage);
-
-                        // Re-render the page
-                        Image newImg = PDFImageRenderer.renderPageToFXImage(pdfInfo, newPage);
-                        currentImageView.setImage(newImg);
-                        System.out.println("Moved to page " + newPage);
-                    }
-                } catch (Exception ex) {
-                    System.err.println("Error rendering PDF page: " + ex.getMessage());
-                }
-            });
-
-            btnFitToPage.setOnAction(event -> {
-                // Fit image to fill the entire scroll pane
-                currentImageView.setPreserveRatio(true);
-                currentImageView.setFitWidth(currentScrollPane.getWidth() - 20); // Account for padding
-                currentImageView.setFitHeight(currentScrollPane.getHeight() - 20); // Account for padding
-                currentScrollPane.setFitToWidth(false);
-                currentScrollPane.setFitToHeight(false);
-                System.out.println("Fit to page");
-            });
-
-            btnFitToWidth.setOnAction(event -> {
-                // Fit image width to the scroll pane width
-                currentImageView.setPreserveRatio(true);
-                currentImageView.setFitWidth(currentScrollPane.getWidth() - 20); // Account for padding
-                currentImageView.setFitHeight(0); // Let height adjust automatically
-                currentScrollPane.setFitToWidth(false);
-                currentScrollPane.setFitToHeight(false);
-                System.out.println("Fit to width");
-            });
-
-            currentButtonBox.getChildren().addAll(btnPrevPage, btnNextPage, btnFitToPage, btnFitToWidth);
+            addPDFControls();
         }
 
         currentButtonBox.setSpacing(10);
@@ -857,6 +522,127 @@ public class Incremental extends Application {
         // Load existing content using the database method
         database.loadContentIntoRichTextArea(currentTopic.getContent(), currentRichTextArea);
 
+        // Setup auto-save functionality
+        setupAutoSave();
+
+        VBox vboxItem = new VBox();
+        vboxItem.getChildren().addAll(
+                currentButtonBox,
+                currentScrollPane,
+                currentRichTextArea);
+        vboxItem.setSpacing(10);
+        vboxItem.setPadding(new Insets(10));
+
+        Scene itemScene = new Scene(vboxItem, 700, 600);
+        itemStage.setScene(itemScene);
+
+        // Bind currentScrollPane max height to 80% of stage height
+        currentScrollPane.maxHeightProperty().bind(itemStage.heightProperty().multiply(0.8));
+
+        itemStage.show();
+
+        System.out.println("Topic window opened.");
+    }
+
+    private void handleClose(ActionEvent e) {
+        // Save current content before closing
+        if (saveTimer != null) {
+            saveTimer.stop();
+        }
+        if (currentTopic != null && currentRichTextArea != null) {
+            database.updateContent(currentTopic.getRowId(), currentRichTextArea);
+        }
+
+        // Close the window
+        Button source = (Button) e.getSource();
+        Stage stage = (Stage) source.getScene().getWindow();
+        stage.close();
+    }
+
+    private void updatePDFControls() {
+        if (currentButtonBox == null)
+            return;
+
+        // Remove any existing PDF controls (everything after the first 2
+        // buttons: Next Item and Close)
+        if (currentButtonBox.getChildren().size() > 2) {
+            currentButtonBox.getChildren()
+                    .subList(2, currentButtonBox.getChildren().size())
+                    .clear();
+        }
+
+        // Add PDF controls if this is a PDF topic
+        if (currentTopic != null && currentTopic.isPdf()) {
+            addPDFControls();
+        }
+    }
+
+    private void addPDFControls() {
+        Button btnPrevPage = new Button("Previous Page");
+        Button btnNextPage = new Button("Next Page");
+        Button btnFitToPage = new Button("Fit to Page");
+        Button btnFitToWidth = new Button("Fit to Width");
+
+        btnPrevPage.setOnAction(event -> {
+            if (currentTopic.getCurrentPage() > 1) {
+                int newPage = currentTopic.getCurrentPage() - 1;
+                currentTopic.setCurrentPage(newPage);
+                database.updatePDFPage(currentTopic.getRowId(), newPage);
+
+                // Re-render the page
+                try {
+                    PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDF(currentTopic.getPdfPath());
+                    Image newImg = PDFImageRenderer.renderPageToFXImage(pdfInfo, newPage);
+                    currentImageView.setImage(newImg);
+                    System.out.println("Moved to page " + newPage);
+                } catch (Exception ex) {
+                    System.err.println("Error rendering PDF page: " + ex.getMessage());
+                }
+            }
+        });
+
+        btnNextPage.setOnAction(event -> {
+            try {
+                PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDF(currentTopic.getPdfPath());
+                if (currentTopic.getCurrentPage() < pdfInfo.getTotalPages()) {
+                    int newPage = currentTopic.getCurrentPage() + 1;
+                    currentTopic.setCurrentPage(newPage);
+                    database.updatePDFPage(currentTopic.getRowId(), newPage);
+
+                    // Re-render the page
+                    Image newImg = PDFImageRenderer.renderPageToFXImage(pdfInfo, newPage);
+                    currentImageView.setImage(newImg);
+                    System.out.println("Moved to page " + newPage);
+                }
+            } catch (Exception ex) {
+                System.err.println("Error rendering PDF page: " + ex.getMessage());
+            }
+        });
+
+        btnFitToPage.setOnAction(event -> {
+            // Fit image to fill the entire scroll pane
+            currentImageView.setPreserveRatio(true);
+            currentImageView.setFitWidth(currentScrollPane.getWidth() - 20); // Account for padding
+            currentImageView.setFitHeight(currentScrollPane.getHeight() - 20); // Account for padding
+            currentScrollPane.setFitToWidth(false);
+            currentScrollPane.setFitToHeight(false);
+            System.out.println("Fit to page");
+        });
+
+        btnFitToWidth.setOnAction(event -> {
+            // Fit image width to the scroll pane width
+            currentImageView.setPreserveRatio(true);
+            currentImageView.setFitWidth(currentScrollPane.getWidth() - 20); // Account for padding
+            currentImageView.setFitHeight(0); // Let height adjust automatically
+            currentScrollPane.setFitToWidth(false);
+            currentScrollPane.setFitToHeight(false);
+            System.out.println("Fit to width");
+        });
+
+        currentButtonBox.getChildren().addAll(btnPrevPage, btnNextPage, btnFitToPage, btnFitToWidth);
+    }
+
+    private void setupAutoSave() {
         // Approach 1: Model property listener for change detection with debouncing
         currentRichTextArea.modelProperty().addListener((obs, oldModel, newModel) -> {
             if (newModel != null) {
@@ -888,103 +674,6 @@ public class Incremental extends Application {
             }));
             saveTimer.play();
         });
-
-        VBox vboxItem = new VBox();
-        vboxItem.getChildren().addAll(
-                currentButtonBox,
-                currentScrollPane,
-                currentRichTextArea);
-        vboxItem.setSpacing(10);
-        vboxItem.setPadding(new Insets(10));
-
-        Scene itemScene = new Scene(vboxItem, 700, 600);
-        itemStage.setScene(itemScene);
-
-        // Bind currentScrollPane max height to 80% of stage height
-        currentScrollPane.maxHeightProperty().bind(itemStage.heightProperty().multiply(0.8));
-
-        itemStage.show();
-
-        System.out.println("Topic window opened.");
-    }
-
-    private void updatePDFControls() {
-        if (currentButtonBox == null)
-            return;
-
-        // Remove any existing PDF controls (everything after the first 2
-        // buttons: Next Item and Close)
-        if (currentButtonBox.getChildren().size() > 2) {
-            currentButtonBox.getChildren()
-                    .subList(2, currentButtonBox.getChildren().size())
-                    .clear();
-        }
-
-        // Add PDF controls if this is a PDF topic
-        if (currentTopic != null && currentTopic.isPdf()) {
-            Button btnPrevPage = new Button("Previous Page");
-            Button btnNextPage = new Button("Next Page");
-            Button btnFitToPage = new Button("Fit to Page");
-            Button btnFitToWidth = new Button("Fit to Width");
-
-            btnPrevPage.setOnAction(event -> {
-                if (currentTopic.getCurrentPage() > 1) {
-                    int newPage = currentTopic.getCurrentPage() - 1;
-                    currentTopic.setCurrentPage(newPage);
-                    database.updatePDFPage(currentTopic.getRowId(), newPage);
-
-                    // Re-render the page
-                    try {
-                        PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDF(currentTopic.getPdfPath());
-                        Image newImg = PDFImageRenderer.renderPageToFXImage(pdfInfo, newPage);
-                        currentImageView.setImage(newImg);
-                        System.out.println("Moved to page " + newPage);
-                    } catch (Exception ex) {
-                        System.err.println("Error rendering PDF page: " + ex.getMessage());
-                    }
-                }
-            });
-
-            btnNextPage.setOnAction(event -> {
-                try {
-                    PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDF(currentTopic.getPdfPath());
-                    if (currentTopic.getCurrentPage() < pdfInfo.getTotalPages()) {
-                        int newPage = currentTopic.getCurrentPage() + 1;
-                        currentTopic.setCurrentPage(newPage);
-                        database.updatePDFPage(currentTopic.getRowId(), newPage);
-
-                        // Re-render the page
-                        Image newImg = PDFImageRenderer.renderPageToFXImage(pdfInfo, newPage);
-                        currentImageView.setImage(newImg);
-                        System.out.println("Moved to page " + newPage);
-                    }
-                } catch (Exception ex) {
-                    System.err.println("Error rendering PDF page: " + ex.getMessage());
-                }
-            });
-
-            btnFitToPage.setOnAction(event -> {
-                // Fit image to fill the entire scroll pane
-                currentImageView.setPreserveRatio(true);
-                currentImageView.setFitWidth(currentScrollPane.getWidth() - 20); // Account for padding
-                currentImageView.setFitHeight(currentScrollPane.getHeight() - 20); // Account for padding
-                currentScrollPane.setFitToWidth(false);
-                currentScrollPane.setFitToHeight(false);
-                System.out.println("Fit to page");
-            });
-
-            btnFitToWidth.setOnAction(event -> {
-                // Fit image width to the scroll pane width
-                currentImageView.setPreserveRatio(true);
-                currentImageView.setFitWidth(currentScrollPane.getWidth() - 20); // Account for padding
-                currentImageView.setFitHeight(0); // Let height adjust automatically
-                currentScrollPane.setFitToWidth(false);
-                currentScrollPane.setFitToHeight(false);
-                System.out.println("Fit to width");
-            });
-
-            currentButtonBox.getChildren().addAll(btnPrevPage, btnNextPage, btnFitToPage, btnFitToWidth);
-        }
     }
 
     public static Image bufferedImageToFXImage(BufferedImage bufferedImage) {
