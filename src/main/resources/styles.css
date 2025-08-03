@@ -1,0 +1,98 @@
+/* Minimalist JavaFX Application Styles */
+
+/* Root styling */
+.root {
+    -fx-font-family: system;
+    -fx-font-size: 14px;
+    -fx-background-color: #ffffff;
+}
+
+/* Simple button hierarchy */
+.primary-button {
+    -fx-background-color: #333333;
+    -fx-text-fill: white;
+    -fx-background-radius: 2px;
+    -fx-padding: 8px 16px;
+    -fx-border-width: 0;
+}
+
+.primary-button:hover {
+    -fx-background-color: #555555;
+}
+
+.secondary-button {
+    -fx-background-color: #ffffff;
+    -fx-text-fill: #333333;
+    -fx-background-radius: 2px;
+    -fx-border-color: #cccccc;
+    -fx-border-width: 1px;
+    -fx-padding: 8px 16px;
+}
+
+.secondary-button:hover {
+    -fx-background-color: #f5f5f5;
+}
+
+.tertiary-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #666666;
+    -fx-border-width: 0;
+    -fx-padding: 8px 16px;
+    -fx-underline: false;
+}
+
+.tertiary-button:hover {
+    -fx-text-fill: #333333;
+}
+
+/* Text field styling */
+.text-field {
+    -fx-background-color: white;
+    -fx-border-color: #cccccc;
+    -fx-border-radius: 2px;
+    -fx-background-radius: 2px;
+    -fx-border-width: 1px;
+    -fx-padding: 8px;
+    -fx-font-size: 14px;
+}
+
+.text-field:focused {
+    -fx-border-color: #333333;
+}
+
+.text-field.error {
+    -fx-border-color: #cc0000;
+}
+
+/* Layout containers */
+.section-container {
+    -fx-background-color: white;
+    -fx-border-color: #eeeeee;
+    -fx-border-width: 1px;
+    -fx-padding: 16px;
+    -fx-spacing: 12px;
+}
+
+.section-title {
+    -fx-font-size: 16px;
+    -fx-font-weight: normal;
+    -fx-text-fill: #333333;
+    -fx-padding: 0 0 8px 0;
+}
+
+.button-group {
+    -fx-spacing: 8px;
+    -fx-alignment: center-left;
+}
+
+.form-group {
+    -fx-spacing: 8px;
+    -fx-alignment: center-left;
+}
+
+/* Main container */
+.main-container {
+    -fx-padding: 16px;
+    -fx-spacing: 16px;
+    -fx-background-color: #ffffff;
+}
