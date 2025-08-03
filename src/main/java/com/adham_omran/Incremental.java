@@ -1,6 +1,7 @@
 package com.adham_omran;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.scene.Group;
 import javafx.scene.Scene;
@@ -356,7 +357,17 @@ public class Incremental extends Application {
             stageTable.show();
         });
 
-        btnNext.setOnAction(e -> openTopicWindow());
+        btnNext.setOnAction(e -> {
+            // Initialize currentTopic if it's null
+            if (currentTopic == null) {
+                currentTopic = database.nextTopic();
+                if (currentTopic == null) {
+                    System.out.println("No topics available in the database.");
+                    return;
+                }
+            }
+            openTopicWindow();
+        });
 
         btnTopicWithId.setOnAction(e -> {
             String inputText = txtInput.getText().trim();
@@ -773,6 +784,14 @@ public class Incremental extends Application {
 
             // Apply current zoom level to new page
             applyZoom();
+            
+            // Scroll to top of the new page for natural reading flow
+            Platform.runLater(() -> {
+                if (currentScrollPane != null) {
+                    currentScrollPane.setVvalue(0.0); // Scroll to top
+                    currentScrollPane.setHvalue(0.0); // Scroll to left
+                }
+            });
 
             // Update page number field
             if (pageNumberField != null) {
