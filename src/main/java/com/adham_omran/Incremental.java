@@ -442,6 +442,19 @@ public class Incremental extends Application {
 
             // Update PDF controls based on the new topic
             updatePDFControls();
+            
+            // Update page display if this is a PDF topic
+            if (currentTopic.isPdf() && pageNumberField != null) {
+                try {
+                    PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDF(currentTopic.getPdfPath());
+                    pageNumberField.setText(String.valueOf(currentTopic.getCurrentPage()));
+                    if (totalPagesLabel != null) {
+                        totalPagesLabel.setText("of " + pdfInfo.getTotalPages());
+                    }
+                } catch (Exception ex) {
+                    System.err.println("Error updating page display: " + ex.getMessage());
+                }
+            }
         } else {
             System.out.println("No more topics available.");
         }
