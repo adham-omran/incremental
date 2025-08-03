@@ -518,13 +518,29 @@ public class Incremental extends Application {
         currentScrollPane.setContextMenu(contextMenu);
 
         Button btnNextItem = new Button("Next Item");
+        btnNextItem.getStyleClass().add("primary-button");
         btnNextItem.setOnAction(this::handleNextItem);
 
         Button btnClose = new Button("Close");
+        btnClose.getStyleClass().add("secondary-button");
         btnClose.setOnAction(this::handleClose);
 
         currentButtonBox = new HBox();
-        currentButtonBox.getChildren().addAll(btnNextItem, btnClose);
+        
+        // Create main controls section for Next Item and Close buttons
+        VBox mainControlsSection = new VBox();
+        mainControlsSection.getStyleClass().add("section-container");
+        mainControlsSection.setSpacing(8);
+        
+        Label mainLabel = new Label("Topic Controls");
+        mainLabel.getStyleClass().add("section-title");
+        
+        HBox mainButtons = new HBox();
+        mainButtons.getStyleClass().add("button-group");
+        mainButtons.getChildren().addAll(btnNextItem, btnClose);
+        
+        mainControlsSection.getChildren().addAll(mainLabel, mainButtons);
+        currentButtonBox.getChildren().add(mainControlsSection);
 
         // Add PDF controls if this is a PDF topic
         if (currentTopic.isPdf()) {
@@ -550,6 +566,7 @@ public class Incremental extends Application {
         vboxItem.setPadding(new Insets(10));
 
         Scene itemScene = new Scene(vboxItem, 700, 600);
+        itemScene.getStylesheets().add(getClass().getResource("/styles.css").toExternalForm());
         itemStage.setScene(itemScene);
 
         // Bind currentScrollPane max height to 80% of stage height
@@ -579,11 +596,11 @@ public class Incremental extends Application {
         if (currentButtonBox == null)
             return;
 
-        // Remove any existing PDF controls (everything after the first 2
-        // buttons: Next Item and Close)
-        if (currentButtonBox.getChildren().size() > 2) {
+        // Remove any existing PDF controls (everything after the first section
+        // which contains the main Topic Controls)
+        if (currentButtonBox.getChildren().size() > 1) {
             currentButtonBox.getChildren()
-                    .subList(2, currentButtonBox.getChildren().size())
+                    .subList(1, currentButtonBox.getChildren().size())
                     .clear();
         }
 
@@ -594,68 +611,169 @@ public class Incremental extends Application {
     }
 
     private void addPDFControls() {
-        Button btnPrevPage = new Button("Previous Page");
-        Button btnNextPage = new Button("Next Page");
-        Button btnFitToPage = new Button("Fit to Page");
-        Button btnFitToWidth = new Button("Fit to Width");
+        try {
+            // Get PDF info for total pages
+            PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDF(currentTopic.getPdfPath());
+            int totalPages = pdfInfo.getTotalPages();
+            
+            // Create navigation section
+            VBox navigationSection = new VBox();
+            navigationSection.getStyleClass().add("section-container");
+            navigationSection.setSpacing(8);
+            
+            Label navLabel = new Label("Page Navigation");
+            navLabel.getStyleClass().add("section-title");
+            
+            // Page navigation controls
+            HBox pageNavBox = new HBox();
+            pageNavBox.getStyleClass().add("button-group");
+            
+            Button btnPrevPage = new Button("◀ Previous");
+            btnPrevPage.getStyleClass().add("secondary-button");
+            
+            Button btnNextPage = new Button("Next ▶");
+            btnNextPage.getStyleClass().add("secondary-button");
+            
+            // Page number display and jump
+            HBox pageInfoBox = new HBox();
+            pageInfoBox.getStyleClass().add("form-group");
+            pageInfoBox.setSpacing(5);
+            
+            Label pageLabel = new Label("Page:");
+            pageNumberField = new TextField(String.valueOf(currentTopic.getCurrentPage()));
+            pageNumberField.getStyleClass().add("text-field");
+            pageNumberField.setPrefWidth(60);
+            pageNumberField.setTooltip(new Tooltip("Enter page number and press Enter to jump"));
+            
+            totalPagesLabel = new Label("of " + totalPages);
+            
+            Button btnJumpToPage = new Button("Go");
+            btnJumpToPage.getStyleClass().add("tertiary-button");
+            btnJumpToPage.setTooltip(new Tooltip("Jump to the specified page"));
+            
+            pageInfoBox.getChildren().addAll(pageLabel, pageNumberField, totalPagesLabel, btnJumpToPage);
+            pageNavBox.getChildren().addAll(btnPrevPage, btnNextPage);
+            
+            navigationSection.getChildren().addAll(navLabel, pageNavBox, pageInfoBox);
+            
+            // Create view options section
+            VBox viewSection = new VBox();
+            viewSection.getStyleClass().add("section-container");
+            viewSection.setSpacing(8);
+            
+            Label viewLabel = new Label("View Options");
+            viewLabel.getStyleClass().add("section-title");
+            
+            HBox viewBox = new HBox();
+            viewBox.getStyleClass().add("button-group");
+            
+            Button btnFitToPage = new Button("Fit to Page");
+            btnFitToPage.getStyleClass().add("tertiary-button");
+            Button btnFitToWidth = new Button("Fit to Width");
+            btnFitToWidth.getStyleClass().add("tertiary-button");
+            
+            viewBox.getChildren().addAll(btnFitToPage, btnFitToWidth);
+            viewSection.getChildren().addAll(viewLabel, viewBox);
+            
+            // Add sections to main button box
+            currentButtonBox.getChildren().addAll(navigationSection, viewSection);
+            
+            // Set up event handlers
+            btnPrevPage.setOnAction(event -> navigateToPage(currentTopic.getCurrentPage() - 1));
+            btnNextPage.setOnAction(event -> navigateToPage(currentTopic.getCurrentPage() + 1));
+            
+            // Page jump functionality
+            btnJumpToPage.setOnAction(event -> jumpToPage());
+            pageNumberField.setOnAction(event -> jumpToPage());
+            
+            btnFitToPage.setOnAction(event -> {
+                currentImageView.setPreserveRatio(true);
+                currentImageView.setFitWidth(currentScrollPane.getWidth() - 20);
+                currentImageView.setFitHeight(currentScrollPane.getHeight() - 20);
+                currentScrollPane.setFitToWidth(false);
+                currentScrollPane.setFitToHeight(false);
+                System.out.println("Fit to page");
+            });
 
-        btnPrevPage.setOnAction(event -> {
-            if (currentTopic.getCurrentPage() > 1) {
-                int newPage = currentTopic.getCurrentPage() - 1;
-                currentTopic.setCurrentPage(newPage);
-                database.updatePDFPage(currentTopic.getRowId(), newPage);
+            btnFitToWidth.setOnAction(event -> {
+                currentImageView.setPreserveRatio(true);
+                currentImageView.setFitWidth(currentScrollPane.getWidth() - 20);
+                currentImageView.setFitHeight(0);
+                currentScrollPane.setFitToWidth(false);
+                currentScrollPane.setFitToHeight(false);
+                System.out.println("Fit to width");
+            });
+            
+        } catch (Exception ex) {
+            System.err.println("Error setting up PDF controls: " + ex.getMessage());
+            ex.printStackTrace();
+        }
+    }
 
-                // Re-render the page
-                try {
-                    PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDF(currentTopic.getPdfPath());
-                    Image newImg = PDFImageRenderer.renderPageToFXImage(pdfInfo, newPage);
-                    currentImageView.setImage(newImg);
-                    System.out.println("Moved to page " + newPage);
-                } catch (Exception ex) {
-                    System.err.println("Error rendering PDF page: " + ex.getMessage());
-                }
+    private void navigateToPage(int newPage) {
+        try {
+            PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDF(currentTopic.getPdfPath());
+            
+            // Validate page bounds
+            if (newPage < 1 || newPage > pdfInfo.getTotalPages()) {
+                System.out.println("Page " + newPage + " is out of bounds (1-" + pdfInfo.getTotalPages() + ")");
+                return;
             }
-        });
-
-        btnNextPage.setOnAction(event -> {
-            try {
-                PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDF(currentTopic.getPdfPath());
-                if (currentTopic.getCurrentPage() < pdfInfo.getTotalPages()) {
-                    int newPage = currentTopic.getCurrentPage() + 1;
-                    currentTopic.setCurrentPage(newPage);
-                    database.updatePDFPage(currentTopic.getRowId(), newPage);
-
-                    // Re-render the page
-                    Image newImg = PDFImageRenderer.renderPageToFXImage(pdfInfo, newPage);
-                    currentImageView.setImage(newImg);
-                    System.out.println("Moved to page " + newPage);
-                }
-            } catch (Exception ex) {
-                System.err.println("Error rendering PDF page: " + ex.getMessage());
+            
+            // Update topic and database
+            currentTopic.setCurrentPage(newPage);
+            database.updatePDFPage(currentTopic.getRowId(), newPage);
+            
+            // Re-render the page
+            Image newImg = PDFImageRenderer.renderPageToFXImage(pdfInfo, newPage);
+            currentImageView.setImage(newImg);
+            
+            // Update page number field
+            if (pageNumberField != null) {
+                pageNumberField.setText(String.valueOf(newPage));
             }
-        });
+            
+            System.out.println("Moved to page " + newPage + " of " + pdfInfo.getTotalPages());
+            
+        } catch (Exception ex) {
+            System.err.println("Error navigating to page " + newPage + ": " + ex.getMessage());
+            ex.printStackTrace();
+        }
+    }
 
-        btnFitToPage.setOnAction(event -> {
-            // Fit image to fill the entire scroll pane
-            currentImageView.setPreserveRatio(true);
-            currentImageView.setFitWidth(currentScrollPane.getWidth() - 20); // Account for padding
-            currentImageView.setFitHeight(currentScrollPane.getHeight() - 20); // Account for padding
-            currentScrollPane.setFitToWidth(false);
-            currentScrollPane.setFitToHeight(false);
-            System.out.println("Fit to page");
-        });
-
-        btnFitToWidth.setOnAction(event -> {
-            // Fit image width to the scroll pane width
-            currentImageView.setPreserveRatio(true);
-            currentImageView.setFitWidth(currentScrollPane.getWidth() - 20); // Account for padding
-            currentImageView.setFitHeight(0); // Let height adjust automatically
-            currentScrollPane.setFitToWidth(false);
-            currentScrollPane.setFitToHeight(false);
-            System.out.println("Fit to width");
-        });
-
-        currentButtonBox.getChildren().addAll(btnPrevPage, btnNextPage, btnFitToPage, btnFitToWidth);
+    private void jumpToPage() {
+        try {
+            String pageText = pageNumberField.getText().trim();
+            if (pageText.isEmpty()) {
+                pageNumberField.getStyleClass().add("error");
+                pageNumberField.setPromptText("Enter page number");
+                return;
+            }
+            
+            int targetPage = Integer.parseInt(pageText);
+            PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDF(currentTopic.getPdfPath());
+            
+            if (targetPage < 1 || targetPage > pdfInfo.getTotalPages()) {
+                pageNumberField.getStyleClass().add("error");
+                pageNumberField.setText(String.valueOf(currentTopic.getCurrentPage()));
+                pageNumberField.setPromptText("Page must be between 1 and " + pdfInfo.getTotalPages());
+                return;
+            }
+            
+            // Clear any error styling
+            pageNumberField.getStyleClass().remove("error");
+            
+            // Navigate to the page
+            navigateToPage(targetPage);
+            
+        } catch (NumberFormatException ex) {
+            pageNumberField.getStyleClass().add("error");
+            pageNumberField.setText(String.valueOf(currentTopic.getCurrentPage()));
+            pageNumberField.setPromptText("Please enter a valid number");
+        } catch (Exception ex) {
+            System.err.println("Error jumping to page: " + ex.getMessage());
+            ex.printStackTrace();
+        }
     }
 
     private void setupAutoSave() {
