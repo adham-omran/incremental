@@ -56,6 +56,8 @@ public class Incremental extends Application {
     private HBox currentButtonBox;
     private TextField pageNumberField;
     private Label totalPagesLabel;
+    private double currentZoomLevel = 1.0;
+    private Label zoomLevelLabel;
 
     private WritableImage captureScreenshot(int x, int y, int width, int height) {
         Robot robot = new Robot();
@@ -79,68 +81,68 @@ public class Incremental extends Application {
         // Content Actions Section
         VBox contentSection = new VBox();
         contentSection.getStyleClass().add("section-container");
-        
+
         Label contentLabel = new Label("Content Actions");
         contentLabel.getStyleClass().add("section-title");
-        
+
         HBox contentButtons = new HBox();
         contentButtons.getStyleClass().add("button-group");
-        
+
         Button btnClipboard = new Button("Save from Clipboard");
         btnClipboard.getStyleClass().add("primary-button");
         btnClipboard.setTooltip(new Tooltip("Save an image from your clipboard to the database"));
-        
+
         Button btnAddPDF = new Button("Add PDF");
         btnAddPDF.getStyleClass().add("secondary-button");
         btnAddPDF.setTooltip(new Tooltip("Import a PDF file for study"));
-        
+
         contentButtons.getChildren().addAll(btnClipboard, btnAddPDF);
         contentSection.getChildren().addAll(contentLabel, contentButtons);
 
         // Navigation Section
         VBox navigationSection = new VBox();
         navigationSection.getStyleClass().add("section-container");
-        
+
         Label navigationLabel = new Label("Navigation");
         navigationLabel.getStyleClass().add("section-title");
-        
+
         HBox navigationButtons = new HBox();
         navigationButtons.getStyleClass().add("button-group");
-        
+
         Button btnNext = new Button("Next Topic");
         btnNext.getStyleClass().add("secondary-button");
         btnNext.setTooltip(new Tooltip("Open the next topic scheduled for review"));
-        
+
         Button btnTable = new Button("View Table");
         btnTable.getStyleClass().add("tertiary-button");
         btnTable.setTooltip(new Tooltip("View all topics in a sortable table"));
-        
+
         navigationButtons.getChildren().addAll(btnNext, btnTable);
         navigationSection.getChildren().addAll(navigationLabel, navigationButtons);
 
         // Direct Access Section
         VBox accessSection = new VBox();
         accessSection.getStyleClass().add("section-container");
-        
+
         Label accessLabel = new Label("Direct Access");
         accessLabel.getStyleClass().add("section-title");
-        
+
         HBox accessForm = new HBox();
         accessForm.getStyleClass().add("form-group");
-        
+
         Label idLabel = new Label("Topic ID:");
         TextField txtInput = new TextField();
         txtInput.setPromptText("Enter topic ID...");
         txtInput.getStyleClass().add("text-field");
         txtInput.setTooltip(new Tooltip("Enter a specific topic ID to open directly"));
-        
+
         Button btnTopicWithId = new Button("🔍 Open");
         btnTopicWithId.getStyleClass().add("tertiary-button");
         btnTopicWithId.setTooltip(new Tooltip("Open the topic with the specified ID"));
-        
+
         // Add Enter key support for the ID field
         txtInput.setOnAction(event -> btnTopicWithId.fire());
-        
+
         accessForm.getChildren().addAll(idLabel, txtInput, btnTopicWithId);
         accessSection.getChildren().addAll(accessLabel, accessForm);
 
@@ -200,7 +202,7 @@ public class Incremental extends Application {
                 btnClipboard.getStyleClass().removeAll("loading-button");
                 btnClipboard.getStyleClass().add("success-button");
                 btnClipboard.setDisable(false);
-                
+
                 // Reset button after 2 seconds
                 Timeline resetTimer = new Timeline(new KeyFrame(Duration.seconds(2), resetEvent -> {
                     btnClipboard.setText(originalString);
@@ -276,52 +278,52 @@ public class Incremental extends Application {
 
         btnTable.setOnAction(e -> {
             System.out.println("Opening topics table.");
-            
+
             // Create new stage for table
             Stage stageTable = new Stage();
             stageTable.setTitle("All Topics");
-            
+
             // Get all topics from database
             List<TopicTableData> allTopics = database.getAllTopics();
             ObservableList<TopicTableData> data = FXCollections.observableArrayList(allTopics);
-            
+
             // Create table
             TableView<TopicTableData> table = new TableView<>();
             table.setItems(data);
             table.setEditable(false);
-            
+
             // Create columns
             TableColumn<TopicTableData, Integer> idCol = new TableColumn<>("ID");
             idCol.setCellValueFactory(new PropertyValueFactory<>("id"));
             idCol.setPrefWidth(60);
-            
+
             TableColumn<TopicTableData, String> typeCol = new TableColumn<>("Type");
             typeCol.setCellValueFactory(new PropertyValueFactory<>("type"));
             typeCol.setPrefWidth(70);
-            
+
             TableColumn<TopicTableData, String> titleCol = new TableColumn<>("Title");
             titleCol.setCellValueFactory(new PropertyValueFactory<>("title"));
             titleCol.setPrefWidth(250);
-            
+
             TableColumn<TopicTableData, String> addedCol = new TableColumn<>("Added");
             addedCol.setCellValueFactory(new PropertyValueFactory<>("addedDate"));
             addedCol.setPrefWidth(120);
-            
+
             TableColumn<TopicTableData, String> scheduledCol = new TableColumn<>("Scheduled");
             scheduledCol.setCellValueFactory(new PropertyValueFactory<>("scheduledDate"));
             scheduledCol.setPrefWidth(120);
-            
+
             TableColumn<TopicTableData, Double> priorityCol = new TableColumn<>("Priority");
             priorityCol.setCellValueFactory(new PropertyValueFactory<>("priority"));
             priorityCol.setPrefWidth(80);
-            
+
             TableColumn<TopicTableData, Double> aFactorCol = new TableColumn<>("A-Factor");
             aFactorCol.setCellValueFactory(new PropertyValueFactory<>("aFactor"));
             aFactorCol.setPrefWidth(80);
-            
+
             // Add columns to table
             table.getColumns().addAll(idCol, typeCol, titleCol, addedCol, scheduledCol, priorityCol, aFactorCol);
-            
+
             // Add double-click functionality to open topics
             table.setOnMouseClicked(event -> {
                 if (event.getClickCount() == 2) {
@@ -337,16 +339,16 @@ public class Incremental extends Application {
                     }
                 }
             });
-            
+
             // Update window title with count
             stageTable.setTitle("All Topics (" + allTopics.size() + " items)");
-            
+
             // Create layout
             VBox vboxTable = new VBox();
             vboxTable.setSpacing(5);
             vboxTable.setPadding(new Insets(10));
             vboxTable.getChildren().add(table);
-            
+
             // Set up scene and show
             Scene scene = new Scene(vboxTable, 800, 600);
             scene.getStylesheets().add(getClass().getResource("/styles.css").toExternalForm());
@@ -363,7 +365,7 @@ public class Incremental extends Application {
                 txtInput.setPromptText("Please enter a topic ID");
                 return;
             }
-            
+
             try {
                 int topicId = Integer.parseInt(inputText);
                 currentTopic = database.findTopic(topicId);
@@ -379,7 +381,7 @@ public class Incremental extends Application {
                 txtInput.clear();
                 return;
             }
-            
+
             // Clear any error styling and open the topic
             txtInput.getStyleClass().remove("error");
             txtInput.clear();
@@ -389,8 +391,8 @@ public class Incremental extends Application {
         // Apply CSS styling and create scene
         Scene scene = new Scene(mainContainer, 800, 700);
         scene.getStylesheets().add(getClass().getResource("/styles.css").toExternalForm());
-        
-        stage.setTitle("Incremental Learning Application");
+
+        stage.setTitle("Incremental");
         stage.setScene(scene);
         stage.setMinWidth(700);
         stage.setMinHeight(600);
@@ -442,7 +444,7 @@ public class Incremental extends Application {
 
             // Update PDF controls based on the new topic
             updatePDFControls();
-            
+
             // Update page display if this is a PDF topic
             if (currentTopic.isPdf() && pageNumberField != null) {
                 try {
@@ -490,6 +492,9 @@ public class Incremental extends Application {
         currentImageView.setFitWidth(600);
         currentImageView.setPreserveRatio(true);
 
+        // Reset zoom level for new topic
+        currentZoomLevel = 1.0;
+
         currentScrollPane = new ScrollPane();
         currentScrollPane.setContent(currentImageView);
         currentScrollPane.setFitToWidth(true);
@@ -526,19 +531,19 @@ public class Incremental extends Application {
         btnClose.setOnAction(this::handleClose);
 
         currentButtonBox = new HBox();
-        
+
         // Create main controls section for Next Item and Close buttons
         VBox mainControlsSection = new VBox();
         mainControlsSection.getStyleClass().add("section-container");
         mainControlsSection.setSpacing(8);
-        
+
         Label mainLabel = new Label("Topic Controls");
         mainLabel.getStyleClass().add("section-title");
-        
+
         HBox mainButtons = new HBox();
         mainButtons.getStyleClass().add("button-group");
         mainButtons.getChildren().addAll(btnNextItem, btnClose);
-        
+
         mainControlsSection.getChildren().addAll(mainLabel, mainButtons);
         currentButtonBox.getChildren().add(mainControlsSection);
 
@@ -615,95 +620,133 @@ public class Incremental extends Application {
             // Get PDF info for total pages
             PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDF(currentTopic.getPdfPath());
             int totalPages = pdfInfo.getTotalPages();
-            
+
             // Create navigation section
             VBox navigationSection = new VBox();
             navigationSection.getStyleClass().add("section-container");
             navigationSection.setSpacing(8);
-            
+
             Label navLabel = new Label("Page Navigation");
             navLabel.getStyleClass().add("section-title");
-            
+
             // Page navigation controls
             HBox pageNavBox = new HBox();
             pageNavBox.getStyleClass().add("button-group");
-            
+
             Button btnPrevPage = new Button("◀ Previous");
             btnPrevPage.getStyleClass().add("secondary-button");
-            
+
             Button btnNextPage = new Button("Next ▶");
             btnNextPage.getStyleClass().add("secondary-button");
-            
+
             // Page number display and jump
             HBox pageInfoBox = new HBox();
             pageInfoBox.getStyleClass().add("form-group");
             pageInfoBox.setSpacing(5);
-            
+
             Label pageLabel = new Label("Page:");
             pageNumberField = new TextField(String.valueOf(currentTopic.getCurrentPage()));
             pageNumberField.getStyleClass().add("text-field");
             pageNumberField.setPrefWidth(60);
             pageNumberField.setTooltip(new Tooltip("Enter page number and press Enter to jump"));
-            
+
             totalPagesLabel = new Label("of " + totalPages);
-            
+
             Button btnJumpToPage = new Button("Go");
             btnJumpToPage.getStyleClass().add("tertiary-button");
             btnJumpToPage.setTooltip(new Tooltip("Jump to the specified page"));
-            
+
             pageInfoBox.getChildren().addAll(pageLabel, pageNumberField, totalPagesLabel, btnJumpToPage);
             pageNavBox.getChildren().addAll(btnPrevPage, btnNextPage);
-            
+
             navigationSection.getChildren().addAll(navLabel, pageNavBox, pageInfoBox);
-            
+
             // Create view options section
             VBox viewSection = new VBox();
             viewSection.getStyleClass().add("section-container");
             viewSection.setSpacing(8);
-            
+
             Label viewLabel = new Label("View Options");
             viewLabel.getStyleClass().add("section-title");
-            
-            HBox viewBox = new HBox();
-            viewBox.getStyleClass().add("button-group");
-            
+
+            // Preset fit buttons
+            HBox fitBox = new HBox();
+            fitBox.getStyleClass().add("button-group");
+
             Button btnFitToPage = new Button("Fit to Page");
             btnFitToPage.getStyleClass().add("tertiary-button");
             Button btnFitToWidth = new Button("Fit to Width");
             btnFitToWidth.getStyleClass().add("tertiary-button");
-            
-            viewBox.getChildren().addAll(btnFitToPage, btnFitToWidth);
-            viewSection.getChildren().addAll(viewLabel, viewBox);
-            
+
+            fitBox.getChildren().addAll(btnFitToPage, btnFitToWidth);
+
+            // Zoom controls
+            HBox zoomBox = new HBox();
+            zoomBox.getStyleClass().add("form-group");
+            zoomBox.setSpacing(5);
+
+            Button btnZoomOut = new Button("➖");
+            btnZoomOut.getStyleClass().add("secondary-button");
+            btnZoomOut.setTooltip(new Tooltip("Zoom out (Ctrl + -)"));
+
+            Button btnZoomIn = new Button("➕");
+            btnZoomIn.getStyleClass().add("secondary-button");
+            btnZoomIn.setTooltip(new Tooltip("Zoom in (Ctrl + +)"));
+
+            zoomLevelLabel = new Label(Math.round(currentZoomLevel * 100) + "%");
+            zoomLevelLabel.setMinWidth(50);
+            zoomLevelLabel.getStyleClass().add("section-title");
+
+            Button btnZoomReset = new Button("Reset");
+            btnZoomReset.getStyleClass().add("tertiary-button");
+            btnZoomReset.setTooltip(new Tooltip("Reset zoom to 100%"));
+
+            zoomBox.getChildren().addAll(btnZoomOut, zoomLevelLabel, btnZoomIn, btnZoomReset);
+
+            viewSection.getChildren().addAll(viewLabel, fitBox, zoomBox);
+
             // Add sections to main button box
             currentButtonBox.getChildren().addAll(navigationSection, viewSection);
-            
+
             // Set up event handlers
             btnPrevPage.setOnAction(event -> navigateToPage(currentTopic.getCurrentPage() - 1));
             btnNextPage.setOnAction(event -> navigateToPage(currentTopic.getCurrentPage() + 1));
-            
+
             // Page jump functionality
             btnJumpToPage.setOnAction(event -> jumpToPage());
             pageNumberField.setOnAction(event -> jumpToPage());
-            
+
+            // Fit to preset sizes
             btnFitToPage.setOnAction(event -> {
-                currentImageView.setPreserveRatio(true);
-                currentImageView.setFitWidth(currentScrollPane.getWidth() - 20);
-                currentImageView.setFitHeight(currentScrollPane.getHeight() - 20);
-                currentScrollPane.setFitToWidth(false);
-                currentScrollPane.setFitToHeight(false);
+                currentZoomLevel = Math.min(
+                        (currentScrollPane.getWidth() - 20) / currentImageView.getImage().getWidth(),
+                        (currentScrollPane.getHeight() - 20) / currentImageView.getImage().getHeight());
+                applyZoom();
                 System.out.println("Fit to page");
             });
 
             btnFitToWidth.setOnAction(event -> {
-                currentImageView.setPreserveRatio(true);
-                currentImageView.setFitWidth(currentScrollPane.getWidth() - 20);
-                currentImageView.setFitHeight(0);
-                currentScrollPane.setFitToWidth(false);
-                currentScrollPane.setFitToHeight(false);
+                currentZoomLevel = (currentScrollPane.getWidth() - 20) / currentImageView.getImage().getWidth();
+                applyZoom();
                 System.out.println("Fit to width");
             });
-            
+
+            // Zoom controls
+            btnZoomIn.setOnAction(event -> {
+                currentZoomLevel = Math.min(currentZoomLevel * 1.25, 5.0); // Max 500%
+                applyZoom();
+            });
+
+            btnZoomOut.setOnAction(event -> {
+                currentZoomLevel = Math.max(currentZoomLevel / 1.25, 0.1); // Min 10%
+                applyZoom();
+            });
+
+            btnZoomReset.setOnAction(event -> {
+                currentZoomLevel = 1.0;
+                applyZoom();
+            });
+
         } catch (Exception ex) {
             System.err.println("Error setting up PDF controls: " + ex.getMessage());
             ex.printStackTrace();
@@ -713,28 +756,31 @@ public class Incremental extends Application {
     private void navigateToPage(int newPage) {
         try {
             PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDF(currentTopic.getPdfPath());
-            
+
             // Validate page bounds
             if (newPage < 1 || newPage > pdfInfo.getTotalPages()) {
                 System.out.println("Page " + newPage + " is out of bounds (1-" + pdfInfo.getTotalPages() + ")");
                 return;
             }
-            
+
             // Update topic and database
             currentTopic.setCurrentPage(newPage);
             database.updatePDFPage(currentTopic.getRowId(), newPage);
-            
+
             // Re-render the page
             Image newImg = PDFImageRenderer.renderPageToFXImage(pdfInfo, newPage);
             currentImageView.setImage(newImg);
-            
+
+            // Apply current zoom level to new page
+            applyZoom();
+
             // Update page number field
             if (pageNumberField != null) {
                 pageNumberField.setText(String.valueOf(newPage));
             }
-            
+
             System.out.println("Moved to page " + newPage + " of " + pdfInfo.getTotalPages());
-            
+
         } catch (Exception ex) {
             System.err.println("Error navigating to page " + newPage + ": " + ex.getMessage());
             ex.printStackTrace();
@@ -749,23 +795,23 @@ public class Incremental extends Application {
                 pageNumberField.setPromptText("Enter page number");
                 return;
             }
-            
+
             int targetPage = Integer.parseInt(pageText);
             PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDF(currentTopic.getPdfPath());
-            
+
             if (targetPage < 1 || targetPage > pdfInfo.getTotalPages()) {
                 pageNumberField.getStyleClass().add("error");
                 pageNumberField.setText(String.valueOf(currentTopic.getCurrentPage()));
                 pageNumberField.setPromptText("Page must be between 1 and " + pdfInfo.getTotalPages());
                 return;
             }
-            
+
             // Clear any error styling
             pageNumberField.getStyleClass().remove("error");
-            
+
             // Navigate to the page
             navigateToPage(targetPage);
-            
+
         } catch (NumberFormatException ex) {
             pageNumberField.getStyleClass().add("error");
             pageNumberField.setText(String.valueOf(currentTopic.getCurrentPage()));
@@ -773,6 +819,29 @@ public class Incremental extends Application {
         } catch (Exception ex) {
             System.err.println("Error jumping to page: " + ex.getMessage());
             ex.printStackTrace();
+        }
+    }
+
+    private void applyZoom() {
+        if (currentImageView != null && currentImageView.getImage() != null) {
+            // Apply zoom by setting fixed dimensions
+            double originalWidth = currentImageView.getImage().getWidth();
+            double originalHeight = currentImageView.getImage().getHeight();
+
+            currentImageView.setPreserveRatio(true);
+            currentImageView.setFitWidth(originalWidth * currentZoomLevel);
+            currentImageView.setFitHeight(originalHeight * currentZoomLevel);
+
+            // Disable scroll pane auto-fitting to allow custom sizing
+            currentScrollPane.setFitToWidth(false);
+            currentScrollPane.setFitToHeight(false);
+
+            // Update zoom label
+            if (zoomLevelLabel != null) {
+                zoomLevelLabel.setText(Math.round(currentZoomLevel * 100) + "%");
+            }
+
+            System.out.println("Applied zoom: " + Math.round(currentZoomLevel * 100) + "%");
         }
     }
 
