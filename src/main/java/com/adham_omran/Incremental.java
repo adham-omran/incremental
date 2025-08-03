@@ -54,6 +54,8 @@ public class Incremental extends Application {
     private RichTextArea currentRichTextArea;
     private Topic currentTopic;
     private HBox currentButtonBox;
+    private TextField pageNumberField;
+    private Label totalPagesLabel;
 
     private WritableImage captureScreenshot(int x, int y, int width, int height) {
         Robot robot = new Robot();
