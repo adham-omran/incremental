@@ -349,6 +349,7 @@ public class Incremental extends Application {
             
             // Set up scene and show
             Scene scene = new Scene(vboxTable, 800, 600);
+            scene.getStylesheets().add(getClass().getResource("/styles.css").toExternalForm());
             stageTable.setScene(scene);
             stageTable.show();
         });
