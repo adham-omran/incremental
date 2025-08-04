@@ -563,8 +563,8 @@ public class Incremental extends Application {
             addPDFControls();
         }
 
-        currentButtonBox.setSpacing(10);
-        currentButtonBox.setPadding(new Insets(10));
+        currentButtonBox.setSpacing(6);
+        currentButtonBox.setPadding(new Insets(8));
 
         currentRichTextArea = new RichTextArea();
         // Load existing content using the database method
@@ -634,37 +634,37 @@ public class Incremental extends Application {
 
             // Create navigation section
             VBox navigationSection = new VBox();
-            navigationSection.getStyleClass().add("section-container");
-            navigationSection.setSpacing(8);
+            navigationSection.getStyleClass().add("compact-section-container");
+            navigationSection.setSpacing(4);
 
             Label navLabel = new Label("Page Navigation");
-            navLabel.getStyleClass().add("section-title");
+            navLabel.getStyleClass().add("compact-section-title");
 
             // Page navigation controls
             HBox pageNavBox = new HBox();
-            pageNavBox.getStyleClass().add("button-group");
+            pageNavBox.getStyleClass().add("compact-button-group");
 
-            Button btnPrevPage = new Button("◀ Previous");
-            btnPrevPage.getStyleClass().add("secondary-button");
+            Button btnPrevPage = new Button("◀ Prev");
+            btnPrevPage.getStyleClass().add("compact-secondary-button");
 
             Button btnNextPage = new Button("Next ▶");
-            btnNextPage.getStyleClass().add("secondary-button");
+            btnNextPage.getStyleClass().add("compact-secondary-button");
 
             // Page number display and jump
             HBox pageInfoBox = new HBox();
-            pageInfoBox.getStyleClass().add("form-group");
-            pageInfoBox.setSpacing(5);
+            pageInfoBox.getStyleClass().add("compact-form-group");
+            pageInfoBox.setSpacing(4);
 
             Label pageLabel = new Label("Page:");
             pageNumberField = new TextField(String.valueOf(currentTopic.getCurrentPage()));
-            pageNumberField.getStyleClass().add("text-field");
-            pageNumberField.setPrefWidth(60);
+            pageNumberField.getStyleClass().add("compact-text-field");
+            pageNumberField.setPrefWidth(50);
             pageNumberField.setTooltip(new Tooltip("Enter page number and press Enter to jump"));
 
             totalPagesLabel = new Label("of " + totalPages);
 
             Button btnJumpToPage = new Button("Go");
-            btnJumpToPage.getStyleClass().add("tertiary-button");
+            btnJumpToPage.getStyleClass().add("compact-tertiary-button");
             btnJumpToPage.setTooltip(new Tooltip("Jump to the specified page"));
 
             pageInfoBox.getChildren().addAll(pageLabel, pageNumberField, totalPagesLabel, btnJumpToPage);
@@ -674,42 +674,42 @@ public class Incremental extends Application {
 
             // Create view options section
             VBox viewSection = new VBox();
-            viewSection.getStyleClass().add("section-container");
-            viewSection.setSpacing(8);
+            viewSection.getStyleClass().add("compact-section-container");
+            viewSection.setSpacing(4);
 
             Label viewLabel = new Label("View Options");
-            viewLabel.getStyleClass().add("section-title");
+            viewLabel.getStyleClass().add("compact-section-title");
 
             // Preset fit buttons
             HBox fitBox = new HBox();
-            fitBox.getStyleClass().add("button-group");
+            fitBox.getStyleClass().add("compact-button-group");
 
-            Button btnFitToPage = new Button("Fit to Page");
-            btnFitToPage.getStyleClass().add("tertiary-button");
-            Button btnFitToWidth = new Button("Fit to Width");
-            btnFitToWidth.getStyleClass().add("tertiary-button");
+            Button btnFitToPage = new Button("Fit Page");
+            btnFitToPage.getStyleClass().add("compact-tertiary-button");
+            Button btnFitToWidth = new Button("Fit Width");
+            btnFitToWidth.getStyleClass().add("compact-tertiary-button");
 
             fitBox.getChildren().addAll(btnFitToPage, btnFitToWidth);
 
             // Zoom controls
             HBox zoomBox = new HBox();
-            zoomBox.getStyleClass().add("form-group");
-            zoomBox.setSpacing(5);
+            zoomBox.getStyleClass().add("compact-form-group");
+            zoomBox.setSpacing(4);
 
             Button btnZoomOut = new Button("➖");
-            btnZoomOut.getStyleClass().add("secondary-button");
+            btnZoomOut.getStyleClass().add("compact-secondary-button");
             btnZoomOut.setTooltip(new Tooltip("Zoom out (Ctrl + -)"));
 
             Button btnZoomIn = new Button("➕");
-            btnZoomIn.getStyleClass().add("secondary-button");
+            btnZoomIn.getStyleClass().add("compact-secondary-button");
             btnZoomIn.setTooltip(new Tooltip("Zoom in (Ctrl + +)"));
 
             zoomLevelLabel = new Label(Math.round(currentZoomLevel * 100) + "%");
-            zoomLevelLabel.setMinWidth(50);
-            zoomLevelLabel.getStyleClass().add("section-title");
+            zoomLevelLabel.setMinWidth(40);
+            zoomLevelLabel.getStyleClass().add("compact-section-title");
 
             Button btnZoomReset = new Button("Reset");
-            btnZoomReset.getStyleClass().add("tertiary-button");
+            btnZoomReset.getStyleClass().add("compact-tertiary-button");
             btnZoomReset.setTooltip(new Tooltip("Reset zoom to 100%"));
 
             zoomBox.getChildren().addAll(btnZoomOut, zoomLevelLabel, btnZoomIn, btnZoomReset);
