@@ -56,8 +56,89 @@
     -fx-font-size: 14px;
 }
 
+/* Compact button styles for PDF controls */
+.compact-primary-button {
+    -fx-background-color: #333333;
+    -fx-text-fill: white;
+    -fx-background-radius: 2px;
+    -fx-padding: 4px 8px;
+    -fx-border-width: 0;
+    -fx-font-size: 12px;
+}
+
+.compact-primary-button:hover {
+    -fx-background-color: #555555;
+}
+
+.compact-secondary-button {
+    -fx-background-color: #ffffff;
+    -fx-text-fill: #333333;
+    -fx-background-radius: 2px;
+    -fx-border-color: #cccccc;
+    -fx-border-width: 1px;
+    -fx-padding: 4px 8px;
+    -fx-font-size: 12px;
+}
+
+.compact-secondary-button:hover {
+    -fx-background-color: #f5f5f5;
+}
+
+.compact-tertiary-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #666666;
+    -fx-border-width: 0;
+    -fx-padding: 4px 8px;
+    -fx-underline: false;
+    -fx-font-size: 12px;
+}
+
+.compact-tertiary-button:hover {
+    -fx-text-fill: #333333;
+}
+
+.compact-text-field {
+    -fx-background-color: white;
+    -fx-border-color: #cccccc;
+    -fx-border-radius: 2px;
+    -fx-background-radius: 2px;
+    -fx-border-width: 1px;
+    -fx-padding: 4px 6px;
+    -fx-font-size: 12px;
+}
+
 .text-field:focused {
     -fx-border-color: #333333;
+}
+
+.compact-text-field:focused {
+    -fx-border-color: #333333;
+}
+
+/* Compact layout containers for PDF controls */
+.compact-section-container {
+    -fx-background-color: white;
+    -fx-border-color: #eeeeee;
+    -fx-border-width: 1px;
+    -fx-padding: 8px;
+    -fx-spacing: 6px;
+}
+
+.compact-section-title {
+    -fx-font-size: 13px;
+    -fx-font-weight: normal;
+    -fx-text-fill: #333333;
+    -fx-padding: 0 0 4px 0;
+}
+
+.compact-button-group {
+    -fx-spacing: 6px;
+    -fx-alignment: center-left;
+}
+
+.compact-form-group {
+    -fx-spacing: 6px;
+    -fx-alignment: center-left;
 }
 
 .text-field.error {
