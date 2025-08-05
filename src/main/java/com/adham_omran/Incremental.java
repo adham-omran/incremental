@@ -41,6 +41,12 @@ import javafx.animation.Timeline;
 import javafx.animation.KeyFrame;
 import javafx.util.Duration;
 import javafx.stage.FileChooser;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.paint.Color;
+import javafx.scene.layout.StackPane;
+import java.util.List;
+import javafx.scene.input.MouseEvent;
 
 /**
  * JavaFX App
@@ -58,6 +64,11 @@ public class Incremental extends Application {
     private Label totalPagesLabel;
     private double currentZoomLevel = 1.0;
     private Label zoomLevelLabel;
+    private boolean drawMode = false;
+    private Canvas drawingCanvas;
+    private StackPane imageContainer;
+    private double drawStartX, drawStartY;
+    private boolean isDragging = false;
 
     private WritableImage captureScreenshot(int x, int y, int width, int height) {
         Robot robot = new Robot();
@@ -472,6 +483,8 @@ public class Incremental extends Application {
         } else {
             System.out.println("No more topics available.");
         }
+        
+        Platform.runLater(() -> updateCanvasSize());
     }
 
     private void openTopicWindow() {
@@ -504,11 +517,19 @@ public class Incremental extends Application {
         currentImageView.setFitWidth(600);
         currentImageView.setPreserveRatio(true);
 
+        // Initialize drawing canvas
+        drawingCanvas = new Canvas();
+        drawingCanvas.setMouseTransparent(true);
+
+        // Create container for layering ImageView and Canvas
+        imageContainer = new StackPane();
+        imageContainer.getChildren().addAll(currentImageView, drawingCanvas);
+
         // Reset zoom level for new topic
         currentZoomLevel = 1.0;
 
         currentScrollPane = new ScrollPane();
-        currentScrollPane.setContent(currentImageView);
+        currentScrollPane.setContent(imageContainer);
         currentScrollPane.setFitToWidth(true);
         currentScrollPane.setFitToHeight(true);
 
@@ -590,6 +611,8 @@ public class Incremental extends Application {
         currentScrollPane.maxHeightProperty().bind(itemStage.heightProperty().multiply(0.8));
 
         itemStage.show();
+        
+        Platform.runLater(() -> updateCanvasSize());
 
         System.out.println("Topic window opened.");
     }
@@ -717,8 +740,30 @@ public class Incremental extends Application {
 
             viewSection.getChildren().addAll(viewLabel, fitBox, zoomBox);
 
+            // Create drawing section
+            VBox drawingSection = new VBox();
+            drawingSection.getStyleClass().add("compact-section-container");
+            drawingSection.setSpacing(4);
+
+            Label drawLabel = new Label("Drawing Tools");
+            drawLabel.getStyleClass().add("compact-section-title");
+
+            HBox drawBox = new HBox();
+            drawBox.getStyleClass().add("compact-button-group");
+
+            Button btnDrawMode = new Button("Draw Mode");
+            btnDrawMode.getStyleClass().add("compact-tertiary-button");
+            btnDrawMode.setTooltip(new Tooltip("Toggle drawing mode to draw rectangles"));
+
+            Button btnClearRects = new Button("Clear");
+            btnClearRects.getStyleClass().add("compact-secondary-button");
+            btnClearRects.setTooltip(new Tooltip("Clear all rectangles on this page"));
+
+            drawBox.getChildren().addAll(btnDrawMode, btnClearRects);
+            drawingSection.getChildren().addAll(drawLabel, drawBox);
+
             // Add sections to main button box
-            currentButtonBox.getChildren().addAll(navigationSection, viewSection);
+            currentButtonBox.getChildren().addAll(navigationSection, viewSection, drawingSection);
 
             // Set up event handlers
             btnPrevPage.setOnAction(event -> navigateToPage(currentTopic.getCurrentPage() - 1));
@@ -758,6 +803,10 @@ public class Incremental extends Application {
                 currentZoomLevel = 1.0;
                 applyZoom();
             });
+
+            // Drawing controls
+            btnDrawMode.setOnAction(event -> toggleDrawMode(btnDrawMode));
+            btnClearRects.setOnAction(event -> clearRectangles());
 
         } catch (Exception ex) {
             System.err.println("Error setting up PDF controls: " + ex.getMessage());
@@ -800,6 +849,8 @@ public class Incremental extends Application {
             }
 
             System.out.println("Moved to page " + newPage + " of " + pdfInfo.getTotalPages());
+            
+            updateCanvasSize();
 
         } catch (Exception ex) {
             System.err.println("Error navigating to page " + newPage + ": " + ex.getMessage());
@@ -862,6 +913,8 @@ public class Incremental extends Application {
             }
 
             System.out.println("Applied zoom: " + Math.round(currentZoomLevel * 100) + "%");
+            
+            updateCanvasSize();
         }
     }
 
@@ -897,6 +950,142 @@ public class Incremental extends Application {
             }));
             saveTimer.play();
         });
+    }
+
+    private void toggleDrawMode(Button btnDrawMode) {
+        drawMode = !drawMode;
+        if (drawMode) {
+            btnDrawMode.setText("Exit Draw");
+            btnDrawMode.getStyleClass().removeAll("compact-tertiary-button");
+            btnDrawMode.getStyleClass().add("compact-secondary-button");
+            enableDrawing();
+        } else {
+            btnDrawMode.setText("Draw Mode");
+            btnDrawMode.getStyleClass().removeAll("compact-secondary-button");
+            btnDrawMode.getStyleClass().add("compact-tertiary-button");
+            disableDrawing();
+        }
+        System.out.println("Draw mode: " + (drawMode ? "ON" : "OFF"));
+    }
+
+    private void enableDrawing() {
+        drawingCanvas.setMouseTransparent(false);
+        setupDrawingHandlers();
+    }
+
+    private void disableDrawing() {
+        drawingCanvas.setMouseTransparent(true);
+        drawingCanvas.setOnMousePressed(null);
+        drawingCanvas.setOnMouseDragged(null);
+        drawingCanvas.setOnMouseReleased(null);
+    }
+
+    private void setupDrawingHandlers() {
+        drawingCanvas.setOnMousePressed(this::onDrawingMousePressed);
+        drawingCanvas.setOnMouseDragged(this::onDrawingMouseDragged);
+        drawingCanvas.setOnMouseReleased(this::onDrawingMouseReleased);
+    }
+
+    private void onDrawingMousePressed(MouseEvent event) {
+        drawStartX = event.getX();
+        drawStartY = event.getY();
+        isDragging = true;
+        System.out.println("Started drawing at: " + drawStartX + ", " + drawStartY);
+    }
+
+    private void onDrawingMouseDragged(MouseEvent event) {
+        if (isDragging) {
+            drawPreviewRectangle(drawStartX, drawStartY, event.getX(), event.getY());
+        }
+    }
+
+    private void onDrawingMouseReleased(MouseEvent event) {
+        if (isDragging) {
+            isDragging = false;
+            saveRectangle(drawStartX, drawStartY, event.getX(), event.getY());
+            refreshRectangles();
+            System.out.println("Finished drawing at: " + event.getX() + ", " + event.getY());
+        }
+    }
+
+    private void drawPreviewRectangle(double x1, double y1, double x2, double y2) {
+        GraphicsContext gc = drawingCanvas.getGraphicsContext2D();
+        gc.clearRect(0, 0, drawingCanvas.getWidth(), drawingCanvas.getHeight());
+        
+        redrawExistingRectangles();
+        
+        gc.setStroke(Color.RED);
+        gc.setLineWidth(2.0);
+        gc.strokeRect(Math.min(x1, x2), Math.min(y1, y2), Math.abs(x2 - x1), Math.abs(y2 - y1));
+    }
+
+    private void saveRectangle(double screenX1, double screenY1, double screenX2, double screenY2) {
+        if (currentTopic == null || !currentTopic.isPdf()) return;
+        
+        if (currentImageView.getImage() == null) return;
+        
+        double imageWidth = currentImageView.getBoundsInLocal().getWidth();
+        double imageHeight = currentImageView.getBoundsInLocal().getHeight();
+        
+        double relX1 = screenX1 / imageWidth;
+        double relY1 = screenY1 / imageHeight;
+        double relX2 = screenX2 / imageWidth;
+        double relY2 = screenY2 / imageHeight;
+        
+        RectangleData rect = new RectangleData(
+            currentTopic.getRowId(),
+            currentTopic.getCurrentPage(),
+            relX1, relY1, relX2, relY2
+        );
+        
+        database.saveRectangle(rect);
+    }
+
+    private void clearRectangles() {
+        if (currentTopic == null || !currentTopic.isPdf()) return;
+        
+        database.deleteRectanglesForPage(currentTopic.getRowId(), currentTopic.getCurrentPage());
+        refreshRectangles();
+        System.out.println("Cleared rectangles for current page");
+    }
+
+    private void refreshRectangles() {
+        GraphicsContext gc = drawingCanvas.getGraphicsContext2D();
+        gc.clearRect(0, 0, drawingCanvas.getWidth(), drawingCanvas.getHeight());
+        redrawExistingRectangles();
+    }
+
+    private void redrawExistingRectangles() {
+        if (currentTopic == null || !currentTopic.isPdf()) return;
+        
+        List<RectangleData> rectangles = database.getRectanglesForPage(
+            currentTopic.getRowId(), 
+            currentTopic.getCurrentPage()
+        );
+        
+        GraphicsContext gc = drawingCanvas.getGraphicsContext2D();
+        gc.setStroke(Color.BLUE);
+        gc.setLineWidth(2.0);
+        
+        double imageWidth = currentImageView.getBoundsInLocal().getWidth();
+        double imageHeight = currentImageView.getBoundsInLocal().getHeight();
+        
+        for (RectangleData rect : rectangles) {
+            double x1 = rect.getX1() * imageWidth;
+            double y1 = rect.getY1() * imageHeight;
+            double x2 = rect.getX2() * imageWidth;
+            double y2 = rect.getY2() * imageHeight;
+            
+            gc.strokeRect(Math.min(x1, x2), Math.min(y1, y2), Math.abs(x2 - x1), Math.abs(y2 - y1));
+        }
+    }
+
+    private void updateCanvasSize() {
+        if (drawingCanvas != null && currentImageView != null) {
+            drawingCanvas.setWidth(currentImageView.getBoundsInLocal().getWidth());
+            drawingCanvas.setHeight(currentImageView.getBoundsInLocal().getHeight());
+            refreshRectangles();
+        }
     }
 
     public static Image bufferedImageToFXImage(BufferedImage bufferedImage) {
