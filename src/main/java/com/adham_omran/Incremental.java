@@ -13,7 +13,6 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import java.util.List;
 import javafx.scene.control.TextField;
-import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.control.Label;
@@ -72,10 +71,12 @@ public class Incremental extends Application {
 
     @Override
     public void start(Stage stage) throws IOException {
+        // Layout
+
         // Initialize database
         database = new Database();
 
-        // Create main container with improved layout
+        // Create main container
         VBox mainContainer = new VBox();
         mainContainer.getStyleClass().add("main-container");
 
@@ -278,7 +279,7 @@ public class Incremental extends Application {
         });
 
         btnTable.setOnAction(e -> {
-            System.out.println("Opening topics table.");
+                System.out.println("Opening topics table.");
 
             // Create new stage for table
             Stage stageTable = new Stage();
@@ -784,7 +785,7 @@ public class Incremental extends Application {
 
             // Apply current zoom level to new page
             applyZoom();
-            
+
             // Scroll to top of the new page for natural reading flow
             Platform.runLater(() -> {
                 if (currentScrollPane != null) {
