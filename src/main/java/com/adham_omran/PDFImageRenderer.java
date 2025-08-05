@@ -69,4 +69,42 @@ public class PDFImageRenderer {
     public static Image renderPageToFXImage(PDFInfo pdfInfo, int pageNumber) {
         return renderPageToFXImage(pdfInfo, pageNumber, 300f);
     }
+
+    public static BufferedImage extractRectangleFromPDF(PDFInfo pdfInfo, int pageNumber, double x1, double y1,
+            double x2, double y2) {
+        try {
+            // Render page at high resolution for better extraction quality
+            BufferedImage fullPage = renderPageToImage(pdfInfo, pageNumber, 600f);
+            if (fullPage == null)
+                return null;
+
+            // Calculate rectangle bounds in pixel coordinates
+            int pageWidth = fullPage.getWidth();
+            int pageHeight = fullPage.getHeight();
+
+            int rectX = (int) (Math.min(x1, x2) * pageWidth);
+            int rectY = (int) (Math.min(y1, y2) * pageHeight);
+            int rectWidth = (int) (Math.abs(x2 - x1) * pageWidth);
+            int rectHeight = (int) (Math.abs(y2 - y1) * pageHeight);
+
+            // Ensure bounds are within image
+            rectX = Math.max(0, Math.min(rectX, pageWidth - 1));
+            rectY = Math.max(0, Math.min(rectY, pageHeight - 1));
+            rectWidth = Math.min(rectWidth, pageWidth - rectX);
+            rectHeight = Math.min(rectHeight, pageHeight - rectY);
+
+            // Extract the rectangle
+            if (rectWidth > 0 && rectHeight > 0) {
+                return fullPage.getSubimage(rectX, rectY, rectWidth, rectHeight);
+            }
+
+            System.err.println("Invalid rectangle dimensions for extraction");
+            return null;
+
+        } catch (Exception e) {
+            System.err.println("Error extracting rectangle from PDF: " + e.getMessage());
+            e.printStackTrace();
+            return null;
+        }
+    }
 }
