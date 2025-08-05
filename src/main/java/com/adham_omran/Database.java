@@ -260,4 +260,74 @@ public class Database {
 
         return topics;
     }
+
+    public void saveRectangle(RectangleData rectangle) {
+        String sql = "INSERT INTO rectangles (item_id, pdf_page, rect_x1, rect_y1, rect_x2, rect_y2) VALUES (?, ?, ?, ?, ?, ?)";
+
+        try (Connection connection = DriverManager.getConnection(DB_PATH);
+                PreparedStatement pstmt = connection.prepareStatement(sql)) {
+
+            pstmt.setInt(1, rectangle.getItemId());
+            pstmt.setInt(2, rectangle.getPdfPage());
+            pstmt.setDouble(3, rectangle.getX1());
+            pstmt.setDouble(4, rectangle.getY1());
+            pstmt.setDouble(5, rectangle.getX2());
+            pstmt.setDouble(6, rectangle.getY2());
+            pstmt.executeUpdate();
+
+            System.out.println("Saved rectangle for item " + rectangle.getItemId() + " page " + rectangle.getPdfPage());
+
+        } catch (SQLException e) {
+            System.err.println("Error saving rectangle: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    public List<RectangleData> getRectanglesForPage(int itemId, int pdfPage) {
+        List<RectangleData> rectangles = new ArrayList<>();
+        String sql = "SELECT * FROM rectangles WHERE item_id = ? AND pdf_page = ?";
+
+        try (Connection connection = DriverManager.getConnection(DB_PATH);
+                PreparedStatement pstmt = connection.prepareStatement(sql)) {
+
+            pstmt.setInt(1, itemId);
+            pstmt.setInt(2, pdfPage);
+            ResultSet rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                RectangleData rect = new RectangleData(
+                        rs.getInt("item_id"),
+                        rs.getInt("pdf_page"),
+                        rs.getDouble("rect_x1"),
+                        rs.getDouble("rect_y1"),
+                        rs.getDouble("rect_x2"),
+                        rs.getDouble("rect_y2"));
+                rectangles.add(rect);
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Error loading rectangles: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return rectangles;
+    }
+
+    public void deleteRectanglesForPage(int itemId, int pdfPage) {
+        String sql = "DELETE FROM rectangles WHERE item_id = ? AND pdf_page = ?";
+
+        try (Connection connection = DriverManager.getConnection(DB_PATH);
+                PreparedStatement pstmt = connection.prepareStatement(sql)) {
+
+            pstmt.setInt(1, itemId);
+            pstmt.setInt(2, pdfPage);
+            int deleted = pstmt.executeUpdate();
+
+            System.out.println("Deleted " + deleted + " rectangles for item " + itemId + " page " + pdfPage);
+
+        } catch (SQLException e) {
+            System.err.println("Error deleting rectangles: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
 }
