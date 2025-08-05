@@ -330,4 +330,25 @@ public class Database {
             e.printStackTrace();
         }
     }
+
+    public void saveExtractedTopic(InputStream input_stream, int image_length, int parentTopicId, int pdfPage) {
+        try (Connection connection = DriverManager.getConnection(DB_PATH);
+                Statement statement = connection.createStatement()) {
+            statement.setQueryTimeout(1);
+
+            String insertSQL = "INSERT INTO images (img, kind, parent_topic, pdf_page, added_at, scheduled_at, viewed_at, a_factor, priority) VALUES (?, 'extract', ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 2.0, 0.5)";
+            try (PreparedStatement pstmt = connection.prepareStatement(insertSQL)) {
+                connection.setAutoCommit(false);
+                pstmt.setBinaryStream(1, input_stream, image_length);
+                pstmt.setInt(2, parentTopicId);
+                pstmt.setInt(3, pdfPage);
+                pstmt.executeUpdate();
+                connection.commit();
+                System.out.println("Saved extracted topic from parent " + parentTopicId + ", page " + pdfPage);
+            }
+        } catch (SQLException e) {
+            System.err.println("Error saving extracted topic: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
 }
