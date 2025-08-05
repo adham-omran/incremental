@@ -23,9 +23,17 @@ public class PDFImageRenderer {
             this.totalPages = totalPages;
         }
 
-        public PDDocument getDocument() { return document; }
-        public PDFRenderer getRenderer() { return renderer; }
-        public int getTotalPages() { return totalPages; }
+        public PDDocument getDocument() {
+            return document;
+        }
+
+        public PDFRenderer getRenderer() {
+            return renderer;
+        }
+
+        public int getTotalPages() {
+            return totalPages;
+        }
     }
 
     public static PDFInfo loadPDF(String filePath) throws IOException {

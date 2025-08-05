@@ -290,7 +290,7 @@ public class Incremental extends Application {
         });
 
         btnTable.setOnAction(e -> {
-                System.out.println("Opening topics table.");
+            System.out.println("Opening topics table.");
 
             // Create new stage for table
             Stage stageTable = new Stage();
@@ -483,7 +483,7 @@ public class Incremental extends Application {
         } else {
             System.out.println("No more topics available.");
         }
-        
+
         Platform.runLater(() -> updateCanvasSize());
     }
 
@@ -611,7 +611,7 @@ public class Incremental extends Application {
         currentScrollPane.maxHeightProperty().bind(itemStage.heightProperty().multiply(0.8));
 
         itemStage.show();
-        
+
         Platform.runLater(() -> updateCanvasSize());
 
         System.out.println("Topic window opened.");
@@ -849,7 +849,7 @@ public class Incremental extends Application {
             }
 
             System.out.println("Moved to page " + newPage + " of " + pdfInfo.getTotalPages());
-            
+
             updateCanvasSize();
 
         } catch (Exception ex) {
@@ -913,7 +913,7 @@ public class Incremental extends Application {
             }
 
             System.out.println("Applied zoom: " + Math.round(currentZoomLevel * 100) + "%");
-            
+
             updateCanvasSize();
         }
     }
@@ -1011,39 +1011,41 @@ public class Incremental extends Application {
     private void drawPreviewRectangle(double x1, double y1, double x2, double y2) {
         GraphicsContext gc = drawingCanvas.getGraphicsContext2D();
         gc.clearRect(0, 0, drawingCanvas.getWidth(), drawingCanvas.getHeight());
-        
+
         redrawExistingRectangles();
-        
+
         gc.setStroke(Color.RED);
         gc.setLineWidth(2.0);
         gc.strokeRect(Math.min(x1, x2), Math.min(y1, y2), Math.abs(x2 - x1), Math.abs(y2 - y1));
     }
 
     private void saveRectangle(double screenX1, double screenY1, double screenX2, double screenY2) {
-        if (currentTopic == null || !currentTopic.isPdf()) return;
-        
-        if (currentImageView.getImage() == null) return;
-        
+        if (currentTopic == null || !currentTopic.isPdf())
+            return;
+
+        if (currentImageView.getImage() == null)
+            return;
+
         double imageWidth = currentImageView.getBoundsInLocal().getWidth();
         double imageHeight = currentImageView.getBoundsInLocal().getHeight();
-        
+
         double relX1 = screenX1 / imageWidth;
         double relY1 = screenY1 / imageHeight;
         double relX2 = screenX2 / imageWidth;
         double relY2 = screenY2 / imageHeight;
-        
+
         RectangleData rect = new RectangleData(
-            currentTopic.getRowId(),
-            currentTopic.getCurrentPage(),
-            relX1, relY1, relX2, relY2
-        );
-        
+                currentTopic.getRowId(),
+                currentTopic.getCurrentPage(),
+                relX1, relY1, relX2, relY2);
+
         database.saveRectangle(rect);
     }
 
     private void clearRectangles() {
-        if (currentTopic == null || !currentTopic.isPdf()) return;
-        
+        if (currentTopic == null || !currentTopic.isPdf())
+            return;
+
         database.deleteRectanglesForPage(currentTopic.getRowId(), currentTopic.getCurrentPage());
         refreshRectangles();
         System.out.println("Cleared rectangles for current page");
@@ -1056,26 +1058,26 @@ public class Incremental extends Application {
     }
 
     private void redrawExistingRectangles() {
-        if (currentTopic == null || !currentTopic.isPdf()) return;
-        
+        if (currentTopic == null || !currentTopic.isPdf())
+            return;
+
         List<RectangleData> rectangles = database.getRectanglesForPage(
-            currentTopic.getRowId(), 
-            currentTopic.getCurrentPage()
-        );
-        
+                currentTopic.getRowId(),
+                currentTopic.getCurrentPage());
+
         GraphicsContext gc = drawingCanvas.getGraphicsContext2D();
         gc.setStroke(Color.BLUE);
         gc.setLineWidth(2.0);
-        
+
         double imageWidth = currentImageView.getBoundsInLocal().getWidth();
         double imageHeight = currentImageView.getBoundsInLocal().getHeight();
-        
+
         for (RectangleData rect : rectangles) {
             double x1 = rect.getX1() * imageWidth;
             double y1 = rect.getY1() * imageHeight;
             double x2 = rect.getX2() * imageWidth;
             double y2 = rect.getY2() * imageHeight;
-            
+
             gc.strokeRect(Math.min(x1, x2), Math.min(y1, y2), Math.abs(x2 - x1), Math.abs(y2 - y1));
         }
     }
