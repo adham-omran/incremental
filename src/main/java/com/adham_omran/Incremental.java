@@ -1040,6 +1040,47 @@ public class Incremental extends Application {
                 relX1, relY1, relX2, relY2);
 
         database.saveRectangle(rect);
+
+        // Automatically extract content from the rectangle
+        extractAndSaveContent(relX1, relY1, relX2, relY2);
+    }
+
+    private void extractAndSaveContent(double relX1, double relY1, double relX2, double relY2) {
+        if (currentTopic == null || !currentTopic.isPdf())
+            return;
+
+        try {
+            // Load PDF for extraction
+            PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDF(currentTopic.getPdfPath());
+
+            // Extract rectangle content
+            BufferedImage extractedImage = PDFImageRenderer.extractRectangleFromPDF(
+                    pdfInfo,
+                    currentTopic.getCurrentPage(),
+                    relX1, relY1, relX2, relY2);
+
+            if (extractedImage != null) {
+                // Convert to InputStream for database storage
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                ImageIO.write(extractedImage, "png", baos);
+                ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+
+                // Save as new extracted topic
+                database.saveExtractedTopic(
+                        bais,
+                        baos.size(),
+                        currentTopic.getRowId(),
+                        currentTopic.getCurrentPage());
+
+                System.out.println("Successfully extracted and saved content from rectangle");
+            } else {
+                System.err.println("Failed to extract content from rectangle");
+            }
+
+        } catch (Exception e) {
+            System.err.println("Error during content extraction: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     private void clearRectangles() {
