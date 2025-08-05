@@ -22,7 +22,6 @@ import jfx.incubator.scene.control.richtext.RichTextArea;
 public class Database {
     String DB_PATH = "jdbc:sqlite:test.db";
 
-
     public void saveImage(InputStream input_stream, int image_length) {
         try (Connection connection = DriverManager.getConnection(DB_PATH);
                 Statement statement = connection.createStatement();) {
@@ -107,7 +106,7 @@ public class Database {
         }
     }
 
-        public Topic findTopic(int rowid) {
+    public Topic findTopic(int rowid) {
         String sql = "select rowid, * from images WHERE rowid = ?";
         Topic topic = new Topic();
         try (Connection connection = DriverManager.getConnection(DB_PATH);
@@ -194,7 +193,7 @@ public class Database {
 
     public void savePDF(String pdfPath) {
         try (Connection connection = DriverManager.getConnection(DB_PATH);
-             Statement statement = connection.createStatement()) {
+                Statement statement = connection.createStatement()) {
             statement.setQueryTimeout(1);
 
             String insertSQL = "INSERT INTO images (pdf_path, current_page, added_at, scheduled_at, viewed_at, a_factor, priority) VALUES (?, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 2.0, 0.5)";
@@ -215,7 +214,7 @@ public class Database {
         String sql = "UPDATE images SET current_page = ? WHERE rowid = ?";
 
         try (Connection connection = DriverManager.getConnection(DB_PATH);
-             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+                PreparedStatement pstmt = connection.prepareStatement(sql)) {
 
             pstmt.setInt(1, pageNumber);
             pstmt.setInt(2, rowid);
@@ -228,15 +227,15 @@ public class Database {
             e.printStackTrace();
         }
     }
-    
+
     public List<TopicTableData> getAllTopics() {
         List<TopicTableData> topics = new ArrayList<>();
         String sql = "SELECT rowid, added_at, scheduled_at, a_factor, priority, title, pdf_path FROM images ORDER BY rowid DESC";
-        
+
         try (Connection connection = DriverManager.getConnection(DB_PATH);
-             PreparedStatement pstmt = connection.prepareStatement(sql);
-             ResultSet rs = pstmt.executeQuery()) {
-            
+                PreparedStatement pstmt = connection.prepareStatement(sql);
+                ResultSet rs = pstmt.executeQuery()) {
+
             while (rs.next()) {
                 int id = rs.getInt("rowid");
                 String addedDate = rs.getString("added_at");
@@ -245,19 +244,20 @@ public class Database {
                 double priority = rs.getDouble("priority");
                 String title = rs.getString("title");
                 String pdfPath = rs.getString("pdf_path");
-                
+
                 // Determine type
                 String type = (pdfPath != null && !pdfPath.trim().isEmpty()) ? "PDF" : "Image";
-                
-                TopicTableData tableData = new TopicTableData(id, type, title, addedDate, scheduledDate, priority, aFactor);
+
+                TopicTableData tableData = new TopicTableData(id, type, title, addedDate, scheduledDate, priority,
+                        aFactor);
                 topics.add(tableData);
             }
-            
+
         } catch (SQLException e) {
             System.err.println("Error fetching all topics: " + e.getMessage());
             e.printStackTrace();
         }
-        
+
         return topics;
     }
 }
