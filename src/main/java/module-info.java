@@ -4,7 +4,7 @@ module com.adham_omran {
     requires transitive javafx.graphics;
     requires transitive java.desktop;
     requires transitive java.sql;
-    requires org.apache.pdfbox;
+    requires transitive org.apache.pdfbox;
     requires transitive jfx.incubator.richtext;
     exports com.adham_omran;
 }
