@@ -534,7 +534,8 @@ public class Incremental extends Application {
         // Create source info box
         VBox sourceInfoBox = createSourceInfoBox();
 
-        // Load and display the topic content (this will handle image loading, content loading, and UI updates)
+        // Load and display the topic content (this will handle image loading, content
+        // loading, and UI updates)
         displayTopic(currentTopic);
 
         VBox vboxItem = new VBox();
