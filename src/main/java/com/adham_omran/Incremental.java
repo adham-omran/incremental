@@ -25,14 +25,10 @@ import javafx.scene.image.WritableImage;
 import javafx.scene.robot.Robot;
 import javafx.event.ActionEvent;
 import javafx.scene.control.ScrollPane;
-import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import javax.imageio.ImageIO;
 import jfx.incubator.scene.control.richtext.RichTextArea;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
@@ -171,31 +167,23 @@ public class Incremental extends Application {
                 return;
             }
 
-            // Convert to BufferedImage if it isn't already
-            if (awtImage instanceof BufferedImage) {
-                System.out.println("Conversion Success.");
-                bufferedImage = (BufferedImage) awtImage;
+            // Convert to BufferedImage using ImageUtils
+            bufferedImage = ImageUtils.awtImageToBufferedImage(awtImage);
+            if (bufferedImage != null) {
+                System.out.println("Image conversion successful.");
             } else {
-                System.out.println("Conversion in progress...");
-                bufferedImage = new BufferedImage(awtImage.getWidth(null),
-                        awtImage.getHeight(null),
-                        BufferedImage.TYPE_INT_ARGB);
-                Graphics2D g2d = bufferedImage.createGraphics();
-                g2d.drawImage(awtImage, 0, 0, null);
-                g2d.dispose();
-                System.out.println("Conversion done.");
+                ButtonStateManager.showErrorState(btnClipboard, "❌ Image conversion failed", 3.0);
+                return;
             }
-            try {
-                // Save the image
-                ByteArrayOutputStream os = new ByteArrayOutputStream();
-                ImageIO.write(bufferedImage, "png", os);
-                InputStream fis = new ByteArrayInputStream(os.toByteArray());
-                dbDatabase.saveImage(fis, os.size());
+            // Save the image using ImageUtils
+            InputStream imageStream = ImageUtils.bufferedImageToInputStream(bufferedImage);
+            int imageSize = ImageUtils.getBufferedImageByteSize(bufferedImage);
+            
+            if (imageStream != null && imageSize > 0) {
+                dbDatabase.saveImage(imageStream, imageSize);
                 ButtonStateManager.showSuccessState(btnClipboard, "✅ Saved!", 2.0);
-
-            } catch (IOException e) {
+            } else {
                 ButtonStateManager.showErrorState(btnClipboard, "❌ Save failed", 3.0);
-                e.printStackTrace();
             }
         });
 
@@ -515,7 +503,8 @@ public class Incremental extends Application {
         if (topic.isPdf()) {
             // Render PDF page
             try {
-                PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDF(topic.getPdfPath());
+                PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDFSafe(topic.getPdfPath());
+                if (pdfInfo == null) return;
                 img = PDFImageRenderer.renderPageToFXImage(pdfInfo, topic.getCurrentPage());
                 System.out.println("Rendered PDF page " + topic.getCurrentPage());
             } catch (Exception ex) {
@@ -557,7 +546,8 @@ public class Incremental extends Application {
         // Update page display if this is a PDF topic
         if (topic.isPdf() && pageNumberField != null) {
             try {
-                PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDF(topic.getPdfPath());
+                PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDFSafe(topic.getPdfPath());
+                if (pdfInfo == null) return;
                 pageNumberField.setText(String.valueOf(topic.getCurrentPage()));
                 if (totalPagesLabel != null) {
                     totalPagesLabel.setText("of " + pdfInfo.getTotalPages());
@@ -724,7 +714,8 @@ public class Incremental extends Application {
         // Render the PDF page
         Image pdfImg = null;
         try {
-            PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDF(pdfTopic.getPdfPath());
+            PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDFSafe(pdfTopic.getPdfPath());
+            if (pdfInfo == null) return;
             pdfImg = PDFImageRenderer.renderPageToFXImage(pdfInfo, pdfTopic.getCurrentPage());
             System.out.println("Rendered PDF page " + pdfTopic.getCurrentPage() + " in viewer");
         } catch (Exception ex) {
@@ -783,7 +774,8 @@ public class Incremental extends Application {
 
     private void updatePdfViewer(ImageView imageView, Topic pdfTopic, Label pageLabel) {
         try {
-            PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDF(pdfTopic.getPdfPath());
+            PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDFSafe(pdfTopic.getPdfPath());
+            if (pdfInfo == null) return;
             Image img = PDFImageRenderer.renderPageToFXImage(pdfInfo, pdfTopic.getCurrentPage());
             imageView.setImage(img);
             pageLabel.setText("Page " + pdfTopic.getCurrentPage());
@@ -816,7 +808,8 @@ public class Incremental extends Application {
     private void addPDFControls() {
         try {
             // Get PDF info for total pages
-            PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDF(currentTopic.getPdfPath());
+            PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDFSafe(currentTopic.getPdfPath());
+            if (pdfInfo == null) return;
             int totalPages = pdfInfo.getTotalPages();
 
             // Create navigation section
@@ -919,11 +912,11 @@ public class Incremental extends Application {
 
     private void navigateToPage(int newPage) {
         try {
-            PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDF(currentTopic.getPdfPath());
+            PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDFSafe(currentTopic.getPdfPath());
+            if (pdfInfo == null) return;
 
-            // Validate page bounds
-            if (newPage < 1 || newPage > pdfInfo.getTotalPages()) {
-                System.out.println("Page " + newPage + " is out of bounds (1-" + pdfInfo.getTotalPages() + ")");
+            // Validate page bounds using ValidationUtils
+            if (!ValidationUtils.validatePageNumber(newPage, pdfInfo.getTotalPages(), "page jump")) {
                 return;
             }
 
@@ -963,7 +956,8 @@ public class Incremental extends Application {
             }
 
             int targetPage = Integer.parseInt(pageText);
-            PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDF(currentTopic.getPdfPath());
+            PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDFSafe(currentTopic.getPdfPath());
+            if (pdfInfo == null) return;
 
             if (targetPage < 1 || targetPage > pdfInfo.getTotalPages()) {
                 pageNumberField.getStyleClass().add("error");
@@ -1144,9 +1138,13 @@ public class Incremental extends Application {
         if (currentTopic == null || !currentTopic.isPdf())
             return;
 
-        try {
+        ErrorHandler.executeWithErrorHandling("extracting and saving content", () -> {
             // Load PDF for extraction
-            PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDF(currentTopic.getPdfPath());
+            PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDFSafe(currentTopic.getPdfPath());
+            if (pdfInfo == null) {
+                System.err.println("Failed to load PDF for extraction");
+                return;
+            }
 
             // Extract rectangle content
             BufferedImage extractedImage = PDFImageRenderer.extractRectangleFromPDF(
@@ -1155,15 +1153,14 @@ public class Incremental extends Application {
                     relX1, relY1, relX2, relY2);
 
             if (extractedImage != null) {
-                // Convert to InputStream for database storage
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                ImageIO.write(extractedImage, "png", baos);
-                ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+                // Convert to InputStream for database storage using ImageUtils
+                InputStream imageStream = ImageUtils.bufferedImageToInputStream(extractedImage);
+                int imageSize = ImageUtils.getBufferedImageByteSize(extractedImage);
 
                 // Save as new extracted topic
                 database.saveExtractedTopic(
-                        bais,
-                        baos.size(),
+                        imageStream,
+                        imageSize,
                         currentTopic.getRowId(),
                         currentTopic.getCurrentPage());
 
@@ -1171,11 +1168,7 @@ public class Incremental extends Application {
             } else {
                 System.err.println("Failed to extract content from rectangle");
             }
-
-        } catch (Exception e) {
-            System.err.println("Error during content extraction: " + e.getMessage());
-            e.printStackTrace();
-        }
+        });
     }
 
     private void clearRectangles() {
@@ -1372,26 +1365,11 @@ public class Incremental extends Application {
     }
 
     private String getFileNameFromPath(String path) {
-        if (path == null || path.isEmpty()) {
-            return "Unknown file";
-        }
-        return path.substring(path.lastIndexOf('/') + 1);
+        return FileUtils.getFileNameFromPath(path);
     }
 
     public static Image bufferedImageToFXImage(BufferedImage bufferedImage) {
-        try {
-            // Convert BufferedImage to byte array
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            ImageIO.write(bufferedImage, "png", baos);
-            byte[] imageBytes = baos.toByteArray();
-
-            // Create JavaFX Image from byte array
-            ByteArrayInputStream bais = new ByteArrayInputStream(imageBytes);
-            return new Image(bais);
-
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to convert BufferedImage to JavaFX Image", e);
-        }
+        return ImageUtils.bufferedImageToFXImage(bufferedImage);
     }
 
     public static void main(String[] args) {

@@ -39,77 +39,79 @@ public class Database {
 
     public Image readImage() {
         String sql = "select img, scheduled_at from images order by scheduled_at desc";
-
-        try {
-            return DatabaseUtils.executeQuery(sql, null, rs -> {
-                if (rs.next()) {
-                    try (InputStream is = rs.getBinaryStream("img")) {
-                        if (is != null) {
-                            Image img = new Image(is);
-                            System.out.println("Last read: " + rs.getTimestamp("scheduled_at"));
-                            return img;
+        
+        return ErrorHandler.handleDatabaseError("reading image", () -> {
+            try {
+                return DatabaseUtils.executeQuery(sql, null, rs -> {
+                    if (rs.next()) {
+                        try (InputStream is = rs.getBinaryStream("img")) {
+                            if (is != null) {
+                                Image img = new Image(is);
+                                System.out.println("Last read: " + rs.getTimestamp("scheduled_at"));
+                                return img;
+                            }
+                        } catch (Exception e) {
+                            System.err.println("Error reading image: " + e.getMessage());
                         }
-                    } catch (Exception e) {
-                        System.err.println("Error reading image: " + e.getMessage());
                     }
-                }
-                return null; // No image found
-            });
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            return null; // Return null on error
-        }
+                    return null; // No image found
+                });
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     public Topic nextTopic() {
         String sql = "select rowid, * from images order by scheduled_at asc";
         
-        try {
-            Topic topic = DatabaseUtils.executeQuery(sql, null, rs -> {
-                if (rs.next()) {
-                    return DatabaseUtils.createTopicFromResultSet(rs);
-                }
-                return null;
-            });
+        return ErrorHandler.handleDatabaseError("loading next topic", () -> {
+            try {
+                Topic topic = DatabaseUtils.executeQuery(sql, null, rs -> {
+                    if (rs.next()) {
+                        return DatabaseUtils.createTopicFromResultSet(rs);
+                    }
+                    return null;
+                });
 
-            if (topic != null) {
-                try {
-                    DatabaseUtils.withConnection(connection -> {
+                if (topic != null) {
+                    ErrorHandler.executeWithErrorHandling("updating topic schedule", () -> {
                         try {
-                            increaseDate(topic.getRowId(), connection);
+                            DatabaseUtils.withConnection(connection -> {
+                                try {
+                                    increaseDate(topic.getRowId(), connection);
+                                } catch (Exception e) {
+                                    throw new RuntimeException(e);
+                                }
+                            });
                         } catch (Exception e) {
-                            throw new RuntimeException("Error updating schedule", e);
+                            throw new RuntimeException(e);
                         }
                     });
                 }
-                catch (SQLException e) {
-                    System.err.println("Error updating topic schedule: " + e.getMessage());
-                    e.printStackTrace();
-                }
+                
+                return topic;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
-            
-            return topic;
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            System.out.println("Error loading topic");
-            return null; // Return null on error
-        }
+        });
     }
 
     public Topic findTopic(int rowid) {
         String sql = "select rowid, * from images WHERE rowid = ?";
         
-        try {
-            return DatabaseUtils.executeQuery(sql, pstmt -> pstmt.setInt(1, rowid), rs -> {
-                if (rs.next()) {
-                    return DatabaseUtils.createTopicFromResultSet(rs);
-                }
-                return null;
-            });
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            return null; // Return null on error
-        }
+        return ErrorHandler.handleDatabaseError("finding topic", () -> {
+            try {
+                return DatabaseUtils.executeQuery(sql, pstmt -> pstmt.setInt(1, rowid), rs -> {
+                    if (rs.next()) {
+                        return DatabaseUtils.createTopicFromResultSet(rs);
+                    }
+                    return null;
+                });
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     public void increaseDate(int rowid, Connection conn) throws Exception {

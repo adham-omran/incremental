@@ -44,22 +44,36 @@ public class PDFImageRenderer {
 
         return new PDFInfo(document, renderer, totalPages);
     }
+    
+    /**
+     * Load PDF with error handling (returns null on error)
+     */
+    public static PDFInfo loadPDFSafe(String filePath) {
+        return ErrorHandler.handlePdfError("loading PDF " + filePath, () -> {
+            try {
+                return loadPDF(filePath);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
 
     public static BufferedImage renderPageToImage(PDFInfo pdfInfo, int pageNumber, float dpi) {
-        try {
-            // Convert from 1-based to 0-based page indexing
-            int zeroBasedPage = pageNumber - 1;
-
-            if (zeroBasedPage < 0 || zeroBasedPage >= pdfInfo.getTotalPages()) {
+        return ErrorHandler.handlePdfError("rendering page to image", () -> {
+            // Convert from 1-based to 0-based page indexing using ValidationUtils
+            int zeroBasedPage = ValidationUtils.convertToZeroBasedPage(pageNumber, pdfInfo.getTotalPages());
+            
+            if (zeroBasedPage == -1) {
                 System.err.println("Page number out of range: " + pageNumber);
                 return null;
             }
 
-            return pdfInfo.getRenderer().renderImageWithDPI(zeroBasedPage, dpi);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
+            try {
+                return pdfInfo.getRenderer().renderImageWithDPI(zeroBasedPage, dpi);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     public static Image renderPageToFXImage(PDFInfo pdfInfo, int pageNumber, float dpi) {
@@ -80,39 +94,26 @@ public class PDFImageRenderer {
 
     public static BufferedImage extractRectangleFromPDF(PDFInfo pdfInfo, int pageNumber, double x1, double y1,
             double x2, double y2) {
-        try {
+        return ErrorHandler.handlePdfError("extracting rectangle from PDF", () -> {
             // Render page at high resolution for better extraction quality
             BufferedImage fullPage = renderPageToImage(pdfInfo, pageNumber, 600f);
             if (fullPage == null)
                 return null;
 
-            // Calculate rectangle bounds in pixel coordinates
+            // Calculate rectangle bounds using ValidationUtils
             int pageWidth = fullPage.getWidth();
             int pageHeight = fullPage.getHeight();
+            
+            ValidationUtils.RectangleBounds bounds = ValidationUtils.calculateImageBounds(
+                x1, y1, x2, y2, pageWidth, pageHeight);
 
-            int rectX = (int) (Math.min(x1, x2) * pageWidth);
-            int rectY = (int) (Math.min(y1, y2) * pageHeight);
-            int rectWidth = (int) (Math.abs(x2 - x1) * pageWidth);
-            int rectHeight = (int) (Math.abs(y2 - y1) * pageHeight);
-
-            // Ensure bounds are within image
-            rectX = Math.max(0, Math.min(rectX, pageWidth - 1));
-            rectY = Math.max(0, Math.min(rectY, pageHeight - 1));
-            rectWidth = Math.min(rectWidth, pageWidth - rectX);
-            rectHeight = Math.min(rectHeight, pageHeight - rectY);
-
-            // Extract the rectangle
-            if (rectWidth > 0 && rectHeight > 0) {
-                return fullPage.getSubimage(rectX, rectY, rectWidth, rectHeight);
+            // Extract the rectangle if bounds are valid
+            if (bounds.isValid()) {
+                return fullPage.getSubimage(bounds.getX(), bounds.getY(), bounds.getWidth(), bounds.getHeight());
             }
 
             System.err.println("Invalid rectangle dimensions for extraction");
             return null;
-
-        } catch (Exception e) {
-            System.err.println("Error extracting rectangle from PDF: " + e.getMessage());
-            e.printStackTrace();
-            return null;
-        }
+        });
     }
 }
