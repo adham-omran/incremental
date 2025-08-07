@@ -15,6 +15,7 @@ import java.util.List;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.control.Label;
 import javafx.scene.control.Tooltip;
 import javafx.stage.Stage;
@@ -60,6 +61,8 @@ public class Incremental extends Application {
     private RichTextArea currentRichTextArea;
     private Topic currentTopic;
     private Label currentSourceLabel;
+    private Button currentViewSourceButton;
+    private Button currentOpenTopicButton;
     private HBox currentButtonBox;
     private TextField pageNumberField;
     private Label totalPagesLabel;
@@ -642,6 +645,141 @@ public class Incremental extends Application {
         Button source = (Button) e.getSource();
         Stage stage = (Stage) source.getScene().getWindow();
         stage.close();
+    }
+
+    private void handleOpenSourceAsTopic(ActionEvent e) {
+        if (currentTopic == null || currentTopic.getTopicParent() <= 0) {
+            System.err.println("Cannot view source: no parent topic available");
+            return;
+        }
+
+        try {
+            Topic parentTopic = database.findTopic(currentTopic.getTopicParent());
+            if (parentTopic != null) {
+                // Save current content before switching
+                if (saveTimer != null) {
+                    saveTimer.stop();
+                }
+                if (currentTopic != null && currentRichTextArea != null) {
+                    database.updateContent(currentTopic.getRowId(), currentRichTextArea);
+                }
+
+                // Switch to parent topic
+                currentTopic = parentTopic;
+
+                // Update the UI to show the parent PDF
+                openTopicWindow();
+
+                System.out.println("Opened source PDF for parent topic: " + parentTopic.getRowId());
+            } else {
+                System.err.println("Parent topic not found: " + currentTopic.getTopicParent());
+            }
+        } catch (Exception ex) {
+            System.err.println("Error opening source PDF: " + ex.getMessage());
+            ex.printStackTrace();
+        }
+    }
+
+    private void handleViewSourcePdf(ActionEvent e) {
+        if (currentTopic == null || currentTopic.getTopicParent() <= 0) {
+            System.err.println("Cannot view source: no parent topic available");
+            return;
+        }
+
+        try {
+            Topic parentTopic = database.findTopic(currentTopic.getTopicParent());
+            if (parentTopic != null && parentTopic.isPdf()) {
+                openLightweightPdfViewer(parentTopic);
+                System.out.println("Opened lightweight PDF viewer for parent topic: " + parentTopic.getRowId());
+            } else {
+                System.err.println("Parent topic not found or not a PDF: " + currentTopic.getTopicParent());
+            }
+        } catch (Exception ex) {
+            System.err.println("Error opening PDF viewer: " + ex.getMessage());
+            ex.printStackTrace();
+        }
+    }
+
+    private void openLightweightPdfViewer(Topic pdfTopic) {
+        Stage viewerStage = new Stage();
+        viewerStage.setTitle("Source PDF - " + getFileNameFromPath(pdfTopic.getPdfPath()));
+
+        // Create image view for PDF display
+        ImageView pdfImageView = new ImageView();
+
+        // Render the PDF page
+        Image pdfImg = null;
+        try {
+            PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDF(pdfTopic.getPdfPath());
+            pdfImg = PDFImageRenderer.renderPageToFXImage(pdfInfo, pdfTopic.getCurrentPage());
+            System.out.println("Rendered PDF page " + pdfTopic.getCurrentPage() + " in viewer");
+        } catch (Exception ex) {
+            System.err.println("Error rendering PDF in viewer: " + ex.getMessage());
+            ex.printStackTrace();
+        }
+
+        if (pdfImg != null) {
+            pdfImageView.setImage(pdfImg);
+            pdfImageView.setFitWidth(700);
+            pdfImageView.setPreserveRatio(true);
+        }
+
+        // Create simple page controls
+        HBox pageControls = new HBox();
+        pageControls.getStyleClass().add("button-group");
+        pageControls.setSpacing(4);
+
+        Button btnPrevPage = new Button("◀ Prev");
+        btnPrevPage.getStyleClass().add("compact-secondary-button");
+
+        Label pageLabel = new Label("Page " + pdfTopic.getCurrentPage());
+
+        Button btnNextPage = new Button("Next ▶");
+        btnNextPage.getStyleClass().add("compact-secondary-button");
+
+        pageControls.getChildren().addAll(btnPrevPage, pageLabel, btnNextPage);
+
+        // Simple page navigation handlers
+        btnPrevPage.setOnAction(e -> {
+            if (pdfTopic.getCurrentPage() > 1) {
+                pdfTopic.setCurrentPage(pdfTopic.getCurrentPage() - 1);
+                updatePdfViewer(pdfImageView, pdfTopic, pageLabel);
+            }
+        });
+
+        btnNextPage.setOnAction(e -> {
+            pdfTopic.setCurrentPage(pdfTopic.getCurrentPage() + 1);
+            updatePdfViewer(pdfImageView, pdfTopic, pageLabel);
+        });
+
+        // Create scroll pane for the PDF
+        ScrollPane scrollPane = new ScrollPane();
+        scrollPane.setContent(pdfImageView);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setFitToHeight(true);
+
+        // Layout
+        VBox viewerLayout = new VBox();
+        viewerLayout.setSpacing(10);
+        viewerLayout.setPadding(new Insets(10));
+        viewerLayout.getChildren().addAll(pageControls, scrollPane);
+
+        Scene viewerScene = new Scene(viewerLayout, 750, 600);
+        viewerScene.getStylesheets().add(getClass().getResource("/styles.css").toExternalForm());
+        viewerStage.setScene(viewerScene);
+        viewerStage.show();
+    }
+
+    private void updatePdfViewer(ImageView imageView, Topic pdfTopic, Label pageLabel) {
+        try {
+            PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDF(pdfTopic.getPdfPath());
+            Image img = PDFImageRenderer.renderPageToFXImage(pdfInfo, pdfTopic.getCurrentPage());
+            imageView.setImage(img);
+            pageLabel.setText("Page " + pdfTopic.getCurrentPage());
+            System.out.println("Updated PDF viewer to page " + pdfTopic.getCurrentPage());
+        } catch (Exception ex) {
+            System.err.println("Error updating PDF viewer: " + ex.getMessage());
+        }
     }
 
     private void updateTopicControls() {
@@ -1236,13 +1374,42 @@ public class Incremental extends Application {
         infoBox.getStyleClass().add("section-container");
         infoBox.setSpacing(4);
 
+        // Create HBox for label and button layout
+        HBox contentBox = new HBox();
+        contentBox.setSpacing(8);
+
+        // Create source label (takes 80% of width)
         currentSourceLabel = new Label();
         currentSourceLabel.getStyleClass().add("info-text");
+        HBox.setHgrow(currentSourceLabel, Priority.ALWAYS);
+        currentSourceLabel.setMaxWidth(Double.MAX_VALUE);
+
+        // Create buttons container for two buttons
+        HBox buttonsBox = new HBox();
+        buttonsBox.setSpacing(4);
+
+        // Create "Open for View" button
+        currentViewSourceButton = new Button("View");
+        currentViewSourceButton.getStyleClass().add("compact-tertiary-button");
+        currentViewSourceButton.setOnAction(this::handleViewSourcePdf);
+        currentViewSourceButton.setVisible(false);
+        currentViewSourceButton.setManaged(false);
+
+        // Create "Open as Topic" button
+        currentOpenTopicButton = new Button("Open");
+        currentOpenTopicButton.getStyleClass().add("compact-tertiary-button");
+        currentOpenTopicButton.setOnAction(this::handleOpenSourceAsTopic);
+        currentOpenTopicButton.setVisible(false);
+        currentOpenTopicButton.setManaged(false);
+
+        buttonsBox.getChildren().addAll(currentViewSourceButton, currentOpenTopicButton);
+
+        contentBox.getChildren().addAll(currentSourceLabel, buttonsBox);
 
         // Set initial content
         updateSourceInfo();
 
-        infoBox.getChildren().addAll(currentSourceLabel);
+        infoBox.getChildren().addAll(contentBox);
         return infoBox;
     }
 
@@ -1265,6 +1432,15 @@ public class Incremental extends Application {
                     } else {
                         currentSourceLabel.setText("PDF (no path available)");
                     }
+                    // Hide buttons for PDF items
+                    if (currentViewSourceButton != null) {
+                        currentViewSourceButton.setVisible(false);
+                        currentViewSourceButton.setManaged(false);
+                    }
+                    if (currentOpenTopicButton != null) {
+                        currentOpenTopicButton.setVisible(false);
+                        currentOpenTopicButton.setManaged(false);
+                    }
                     break;
                 case "extract":
                     if (currentTopic.getTopicParent() > 0) {
@@ -1272,20 +1448,65 @@ public class Incremental extends Application {
                         if (parentPdfPath != null) {
                             String fileName = getFileNameFromPath(parentPdfPath);
                             currentSourceLabel.setText("Extract from PDF: " + fileName);
+                            // Show both buttons for valid extracts
+                            if (currentViewSourceButton != null) {
+                                currentViewSourceButton.setVisible(true);
+                                currentViewSourceButton.setManaged(true);
+                            }
+                            if (currentOpenTopicButton != null) {
+                                currentOpenTopicButton.setVisible(true);
+                                currentOpenTopicButton.setManaged(true);
+                            }
                         } else {
                             currentSourceLabel.setText("Extract from PDF (parent topic not found)");
+                            // Hide buttons if parent not found
+                            if (currentViewSourceButton != null) {
+                                currentViewSourceButton.setVisible(false);
+                                currentViewSourceButton.setManaged(false);
+                            }
+                            if (currentOpenTopicButton != null) {
+                                currentOpenTopicButton.setVisible(false);
+                                currentOpenTopicButton.setManaged(false);
+                            }
                         }
                     } else {
                         currentSourceLabel.setText("Extract from PDF (no parent topic)");
+                        // Hide buttons if no parent topic
+                        if (currentViewSourceButton != null) {
+                            currentViewSourceButton.setVisible(false);
+                            currentViewSourceButton.setManaged(false);
+                        }
+                        if (currentOpenTopicButton != null) {
+                            currentOpenTopicButton.setVisible(false);
+                            currentOpenTopicButton.setManaged(false);
+                        }
                     }
                     break;
                 case "image":
                 default:
                     currentSourceLabel.setText("Image (Topic ID: " + currentTopic.getRowId() + ")");
+                    // Hide buttons for image items
+                    if (currentViewSourceButton != null) {
+                        currentViewSourceButton.setVisible(false);
+                        currentViewSourceButton.setManaged(false);
+                    }
+                    if (currentOpenTopicButton != null) {
+                        currentOpenTopicButton.setVisible(false);
+                        currentOpenTopicButton.setManaged(false);
+                    }
                     break;
             }
         } else {
             currentSourceLabel.setText("No topic loaded");
+            // Hide buttons when no topic is loaded
+            if (currentViewSourceButton != null) {
+                currentViewSourceButton.setVisible(false);
+                currentViewSourceButton.setManaged(false);
+            }
+            if (currentOpenTopicButton != null) {
+                currentOpenTopicButton.setVisible(false);
+                currentOpenTopicButton.setManaged(false);
+            }
         }
     }
 
