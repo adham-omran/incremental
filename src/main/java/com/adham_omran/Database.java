@@ -83,6 +83,10 @@ public class Database {
                 // Set kind and parent_topic fields
                 topic.setKind(rs.getString("kind"));
                 topic.setTopicParent(rs.getInt("parent_topic"));
+                
+                // Set pdf_page if it exists (for extracts)
+                Integer pdfPage = rs.getObject("pdf_page", Integer.class);
+                topic.setPdfPage(pdfPage);
 
                 // Check for PDF first
                 String pdfPath = rs.getString("pdf_path");
@@ -123,6 +127,10 @@ public class Database {
                 topic.setRowId(rowid);
                 topic.setKind(rs.getString("kind"));
                 topic.setTopicParent(rs.getInt("parent_topic"));
+                
+                // Set pdf_page if it exists (for extracts)
+                Integer pdfPage = rs.getObject("pdf_page", Integer.class);
+                topic.setPdfPage(pdfPage);
 
                 // Check for PDF first
                 String pdfPath = rs.getString("pdf_path");

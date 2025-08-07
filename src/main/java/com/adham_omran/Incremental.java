@@ -1369,7 +1369,11 @@ public class Incremental extends Application {
                         String parentPdfPath = database.getParentPdfPath(currentTopic.getTopicParent());
                         if (parentPdfPath != null) {
                             String fileName = getFileNameFromPath(parentPdfPath);
-                            currentSourceLabel.setText("Extract from PDF: " + fileName);
+                            String pageInfo = "";
+                            if (currentTopic.getPdfPage() != null) {
+                                pageInfo = " (Page " + currentTopic.getPdfPage() + ")";
+                            }
+                            currentSourceLabel.setText("Extract from PDF: " + fileName + pageInfo);
                             // Show both buttons for valid extracts
                             if (currentViewSourceButton != null) {
                                 currentViewSourceButton.setVisible(true);

@@ -41,6 +41,12 @@ public class Topic {
     private int currentPage = 1;
 
     /**
+     * Page number from the pdf_page column in database (for extracts)
+     * This stores the original page number when the extract was created
+     */
+    private Integer pdfPage;
+
+    /**
      * Kind of topic: "image", "pdf", or "extract"
      */
     private String kind;
@@ -84,6 +90,10 @@ public class Topic {
 
     public int getTopicParent() {
         return topicParent;
+    }
+
+    public Integer getPdfPage() {
+        return pdfPage;
     }
 
     // Setters with validation
@@ -135,6 +145,10 @@ public class Topic {
 
     public void setTopicParent(int topicParent) {
         this.topicParent = topicParent;
+    }
+
+    public void setPdfPage(Integer pdfPage) {
+        this.pdfPage = pdfPage;
     }
 
     /* Methods */
