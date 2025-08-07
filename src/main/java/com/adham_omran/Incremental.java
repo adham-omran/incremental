@@ -468,7 +468,7 @@ public class Incremental extends Application {
 
             // Update controls based on the new topic
             updateTopicControls();
-            
+
             // Update source info box
             updateSourceInfo();
 
@@ -1238,7 +1238,7 @@ public class Incremental extends Application {
 
         currentSourceLabel = new Label();
         currentSourceLabel.getStyleClass().add("info-text");
-        
+
         // Set initial content
         updateSourceInfo();
 
@@ -1250,16 +1250,18 @@ public class Incremental extends Application {
         if (currentSourceLabel == null) {
             return;
         }
-        
+
         if (currentTopic != null) {
             String kind = currentTopic.getKind();
-            if (kind == null) kind = "unknown";
-            
+            if (kind == null)
+                kind = "unknown";
+
             switch (kind.toLowerCase()) {
                 case "pdf":
                     if (currentTopic.isPdf()) {
                         String fileName = getFileNameFromPath(currentTopic.getPdfPath());
-                        currentSourceLabel.setText("PDF: " + fileName + " (Page " + currentTopic.getCurrentPage() + ")");
+                        currentSourceLabel
+                                .setText("PDF: " + fileName + " (Page " + currentTopic.getCurrentPage() + ")");
                     } else {
                         currentSourceLabel.setText("PDF (no path available)");
                     }
