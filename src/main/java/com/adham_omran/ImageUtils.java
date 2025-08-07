@@ -17,14 +17,18 @@ public class ImageUtils {
      */
     public static Image bufferedImageToFXImage(BufferedImage bufferedImage) {
         return ErrorHandler.handleImageError("converting BufferedImage to JavaFX Image", () -> {
-            // Convert BufferedImage to byte array
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            ImageIO.write(bufferedImage, "png", baos);
-            byte[] imageBytes = baos.toByteArray();
+            try {
+                // Convert BufferedImage to byte array
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                ImageIO.write(bufferedImage, "png", baos);
+                byte[] imageBytes = baos.toByteArray();
 
-            // Create JavaFX Image from byte array
-            ByteArrayInputStream bais = new ByteArrayInputStream(imageBytes);
-            return new Image(bais);
+                // Create JavaFX Image from byte array
+                ByteArrayInputStream bais = new ByteArrayInputStream(imageBytes);
+                return new Image(bais);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         });
     }
     
@@ -68,9 +72,13 @@ public class ImageUtils {
      */
     public static InputStream bufferedImageToInputStream(BufferedImage bufferedImage, String format) {
         return ErrorHandler.handleImageError("converting BufferedImage to InputStream", () -> {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            ImageIO.write(bufferedImage, format, baos);
-            return new ByteArrayInputStream(baos.toByteArray());
+            try {
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                ImageIO.write(bufferedImage, format, baos);
+                return new ByteArrayInputStream(baos.toByteArray());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         });
     }
     
@@ -86,9 +94,13 @@ public class ImageUtils {
      */
     public static int getBufferedImageByteSize(BufferedImage bufferedImage, String format) {
         return ErrorHandler.executeWithErrorHandling("calculating BufferedImage byte size", () -> {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            ImageIO.write(bufferedImage, format, baos);
-            return baos.size();
+            try {
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                ImageIO.write(bufferedImage, format, baos);
+                return baos.size();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }, 0);
     }
     
