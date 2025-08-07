@@ -412,7 +412,7 @@ public class Incremental extends Application {
         });
 
         // Apply CSS styling and create scene
-        Scene scene = new Scene(mainContainer, 800, 700);
+        Scene scene = new Scene(mainContainer, 1000, 800);
         scene.getStylesheets().add(getClass().getResource("/styles.css").toExternalForm());
 
         stage.setTitle("Incremental");
@@ -465,8 +465,8 @@ public class Incremental extends Application {
             // Always load the topic's content into the RichTextArea
             database.loadContentIntoRichTextArea(currentTopic.getContent(), currentRichTextArea);
 
-            // Update PDF controls based on the new topic
-            updatePDFControls();
+            // Update controls based on the new topic
+            updateTopicControls();
 
             // Update page display if this is a PDF topic
             if (currentTopic.isPdf() && pageNumberField != null) {
@@ -580,9 +580,12 @@ public class Incremental extends Application {
         mainControlsSection.getChildren().addAll(mainLabel, mainButtons);
         currentButtonBox.getChildren().add(mainControlsSection);
 
-        // Add PDF controls if this is a PDF topic
+        // Add PDF controls if this is a PDF topic, otherwise add image controls for regular images and extracts
         if (currentTopic.isPdf()) {
             addPDFControls();
+        } else if (currentImageView.getImage() != null) {
+            // Add image controls for regular images and extract topics
+            addImageControls();
         }
 
         currentButtonBox.setSpacing(6);
@@ -603,7 +606,7 @@ public class Incremental extends Application {
         vboxItem.setSpacing(10);
         vboxItem.setPadding(new Insets(10));
 
-        Scene itemScene = new Scene(vboxItem, 700, 600);
+        Scene itemScene = new Scene(vboxItem, 800, 700);
         itemScene.getStylesheets().add(getClass().getResource("/styles.css").toExternalForm());
         itemStage.setScene(itemScene);
 
@@ -632,11 +635,11 @@ public class Incremental extends Application {
         stage.close();
     }
 
-    private void updatePDFControls() {
+    private void updateTopicControls() {
         if (currentButtonBox == null)
             return;
 
-        // Remove any existing PDF controls (everything after the first section
+        // Remove any existing controls (everything after the first section
         // which contains the main Topic Controls)
         if (currentButtonBox.getChildren().size() > 1) {
             currentButtonBox.getChildren()
@@ -644,9 +647,11 @@ public class Incremental extends Application {
                     .clear();
         }
 
-        // Add PDF controls if this is a PDF topic
+        // Add appropriate controls based on topic type
         if (currentTopic != null && currentTopic.isPdf()) {
             addPDFControls();
+        } else if (currentTopic != null && currentImageView.getImage() != null) {
+            addImageControls();
         }
     }
 
@@ -810,6 +815,92 @@ public class Incremental extends Application {
 
         } catch (Exception ex) {
             System.err.println("Error setting up PDF controls: " + ex.getMessage());
+            ex.printStackTrace();
+        }
+    }
+
+    private void addImageControls() {
+        try {
+            // Create view options section for images
+            VBox viewSection = new VBox();
+            viewSection.getStyleClass().add("compact-section-container");
+            viewSection.setSpacing(4);
+
+            Label viewLabel = new Label("Image Controls");
+            viewLabel.getStyleClass().add("compact-section-title");
+
+            // Preset fit buttons
+            HBox fitBox = new HBox();
+            fitBox.getStyleClass().add("compact-button-group");
+
+            Button btnFitToPage = new Button("Fit Page");
+            btnFitToPage.getStyleClass().add("compact-tertiary-button");
+            Button btnFitToWidth = new Button("Fit Width");
+            btnFitToWidth.getStyleClass().add("compact-tertiary-button");
+
+            fitBox.getChildren().addAll(btnFitToPage, btnFitToWidth);
+
+            // Zoom controls
+            HBox zoomBox = new HBox();
+            zoomBox.getStyleClass().add("compact-form-group");
+            zoomBox.setSpacing(4);
+
+            Button btnZoomOut = new Button("➖");
+            btnZoomOut.getStyleClass().add("compact-secondary-button");
+            btnZoomOut.setTooltip(new Tooltip("Zoom out (Ctrl + -)"));
+
+            Button btnZoomIn = new Button("➕");
+            btnZoomIn.getStyleClass().add("compact-secondary-button");
+            btnZoomIn.setTooltip(new Tooltip("Zoom in (Ctrl + +)"));
+
+            zoomLevelLabel = new Label(Math.round(currentZoomLevel * 100) + "%");
+            zoomLevelLabel.setMinWidth(40);
+            zoomLevelLabel.getStyleClass().add("compact-section-title");
+
+            Button btnZoomReset = new Button("Reset");
+            btnZoomReset.getStyleClass().add("compact-tertiary-button");
+            btnZoomReset.setTooltip(new Tooltip("Reset zoom to 100%"));
+
+            zoomBox.getChildren().addAll(btnZoomOut, zoomLevelLabel, btnZoomIn, btnZoomReset);
+
+            viewSection.getChildren().addAll(viewLabel, fitBox, zoomBox);
+
+            // Add section to main button box
+            currentButtonBox.getChildren().add(viewSection);
+
+            // Set up event handlers - same as PDF controls
+            btnFitToPage.setOnAction(event -> {
+                currentZoomLevel = Math.min(
+                        (currentScrollPane.getWidth() - 20) / currentImageView.getImage().getWidth(),
+                        (currentScrollPane.getHeight() - 20) / currentImageView.getImage().getHeight());
+                applyZoom();
+                System.out.println("Fit to page");
+            });
+
+            btnFitToWidth.setOnAction(event -> {
+                currentZoomLevel = (currentScrollPane.getWidth() - 20) / currentImageView.getImage().getWidth();
+                applyZoom();
+                System.out.println("Fit to width");
+            });
+
+            // Zoom controls
+            btnZoomIn.setOnAction(event -> {
+                currentZoomLevel = Math.min(currentZoomLevel * 1.25, 5.0); // Max 500%
+                applyZoom();
+            });
+
+            btnZoomOut.setOnAction(event -> {
+                currentZoomLevel = Math.max(currentZoomLevel / 1.25, 0.1); // Min 10%
+                applyZoom();
+            });
+
+            btnZoomReset.setOnAction(event -> {
+                currentZoomLevel = 1.0;
+                applyZoom();
+            });
+
+        } catch (Exception ex) {
+            System.err.println("Error setting up image controls: " + ex.getMessage());
             ex.printStackTrace();
         }
     }
