@@ -74,16 +74,6 @@ public class Incremental extends Application {
     private double drawStartX, drawStartY;
     private boolean isDragging = false;
 
-    private WritableImage captureScreenshot(int x, int y, int width, int height) {
-        Robot robot = new Robot();
-        try {
-            return robot.getScreenCapture(null, x, y, width, height);
-        } catch (IllegalArgumentException exception) {
-            exception.printStackTrace();
-            return null;
-        }
-    }
-
     @Override
     public void start(Stage stage) throws IOException {
         // Layout
