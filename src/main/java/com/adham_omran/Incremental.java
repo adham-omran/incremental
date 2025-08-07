@@ -3,7 +3,6 @@ package com.adham_omran;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
-import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.TableColumn;
@@ -21,8 +20,6 @@ import javafx.scene.control.Tooltip;
 import javafx.stage.Stage;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.image.WritableImage;
-import javafx.scene.robot.Robot;
 import javafx.event.ActionEvent;
 import javafx.scene.control.ScrollPane;
 import java.awt.image.BufferedImage;
@@ -42,7 +39,6 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import javafx.scene.layout.StackPane;
-import java.util.List;
 import javafx.scene.input.MouseEvent;
 
 /**
@@ -178,7 +174,7 @@ public class Incremental extends Application {
             // Save the image using ImageUtils
             InputStream imageStream = ImageUtils.bufferedImageToInputStream(bufferedImage);
             int imageSize = ImageUtils.getBufferedImageByteSize(bufferedImage);
-            
+
             if (imageStream != null && imageSize > 0) {
                 dbDatabase.saveImage(imageStream, imageSize);
                 ButtonStateManager.showSuccessState(btnClipboard, "✅ Saved!", 2.0);
@@ -737,7 +733,7 @@ public class Incremental extends Application {
         Label pageLabel = new Label("Page " + pdfTopic.getCurrentPage());
 
         HBox pageControls = new HBox();
-        pageControls.getStyleClass().add("button-group");  
+        pageControls.getStyleClass().add("button-group");
         pageControls.setSpacing(4);
         pageControls.getChildren().addAll(btnPrevPage, pageLabel, btnNextPage);
 
