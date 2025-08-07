@@ -80,6 +80,10 @@ public class Database {
                 String content = rs.getString("content");
                 topic.setContent(content != null ? content : "");
 
+                // Set kind and parent_topic fields
+                topic.setKind(rs.getString("kind"));
+                topic.setTopicParent(rs.getInt("parent_topic"));
+
                 // Check for PDF first
                 String pdfPath = rs.getString("pdf_path");
                 if (pdfPath != null) {
@@ -117,6 +121,8 @@ public class Database {
             if (rs.next()) {
                 topic.setContent(rs.getString("content"));
                 topic.setRowId(rowid);
+                topic.setKind(rs.getString("kind"));
+                topic.setTopicParent(rs.getInt("parent_topic"));
 
                 // Check for PDF first
                 String pdfPath = rs.getString("pdf_path");
@@ -169,6 +175,21 @@ public class Database {
             System.err.println("Error updating content: " + e.getMessage());
             e.printStackTrace();
         }
+    }
+
+    public String getParentPdfPath(int parentTopicId) {
+        String sql = "SELECT pdf_path FROM images WHERE rowid = ?";
+        try (Connection connection = DriverManager.getConnection(DB_PATH);
+                PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setInt(1, parentTopicId);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rs.getString("pdf_path");
+            }
+        } catch (SQLException e) {
+            System.err.println("Error querying parent PDF path: " + e.getMessage());
+        }
+        return null;
     }
 
     public void loadContentIntoRichTextArea(String content, RichTextArea richTextArea) {
