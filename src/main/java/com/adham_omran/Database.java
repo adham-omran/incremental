@@ -2,11 +2,8 @@ package com.adham_omran;
 
 import java.io.InputStream;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.io.ByteArrayOutputStream;
 import java.io.ByteArrayInputStream;
 import java.util.List;
@@ -24,7 +21,7 @@ public class Database {
 
     public void saveImage(InputStream input_stream, int image_length) {
         String sql = "INSERT INTO images (img, added_at, scheduled_at, viewed_at, a_factor, priority) VALUES (?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 2.0, 0.5)";
-        
+
         try {
             DatabaseUtils.executeUpdate(sql, pstmt -> {
                 pstmt.setBinaryStream(1, input_stream, image_length);
@@ -39,7 +36,7 @@ public class Database {
 
     public Image readImage() {
         String sql = "select img, scheduled_at from images order by scheduled_at desc";
-        
+
         return ErrorHandler.handleDatabaseError("reading image", () -> {
             try {
                 return DatabaseUtils.executeQuery(sql, null, rs -> {
@@ -64,7 +61,7 @@ public class Database {
 
     public Topic nextTopic() {
         String sql = "select rowid, * from images order by scheduled_at asc";
-        
+
         return ErrorHandler.handleDatabaseError("loading next topic", () -> {
             try {
                 Topic topic = DatabaseUtils.executeQuery(sql, null, rs -> {
@@ -89,7 +86,7 @@ public class Database {
                         }
                     });
                 }
-                
+
                 return topic;
             } catch (Exception e) {
                 throw new RuntimeException(e);
@@ -99,7 +96,7 @@ public class Database {
 
     public Topic findTopic(int rowid) {
         String sql = "select rowid, * from images WHERE rowid = ?";
-        
+
         return ErrorHandler.handleDatabaseError("finding topic", () -> {
             try {
                 return DatabaseUtils.executeQuery(sql, pstmt -> pstmt.setInt(1, rowid), rs -> {
@@ -186,7 +183,7 @@ public class Database {
 
     public void savePDF(String pdfPath) {
         String sql = "INSERT INTO images (pdf_path, current_page, added_at, scheduled_at, viewed_at, a_factor, priority) VALUES (?, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 2.0, 0.5)";
-        
+
         try {
             DatabaseUtils.executeUpdate(sql, pstmt -> {
                 pstmt.setString(1, pdfPath);
@@ -305,7 +302,7 @@ public class Database {
 
     public void saveExtractedTopic(InputStream input_stream, int image_length, int parentTopicId, int pdfPage) {
         String sql = "INSERT INTO images (img, kind, parent_topic, pdf_page, added_at, scheduled_at, viewed_at, a_factor, priority) VALUES (?, 'extract', ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 2.0, 0.5)";
-        
+
         try {
             DatabaseUtils.executeUpdate(sql, pstmt -> {
                 pstmt.setBinaryStream(1, input_stream, image_length);
