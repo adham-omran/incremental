@@ -438,60 +438,10 @@ public class Incremental extends Application {
         // Load next topic
         currentTopic = database.nextTopic();
         if (currentTopic != null) {
-            Image nextImg = null;
-
-            if (currentTopic.isPdf()) {
-                // Render PDF page
-                try {
-                    PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDF(currentTopic.getPdfPath());
-                    nextImg = PDFImageRenderer.renderPageToFXImage(pdfInfo, currentTopic.getCurrentPage());
-                    System.out.println("Rendered PDF page " + currentTopic.getCurrentPage());
-                } catch (Exception ex) {
-                    System.err.println("Error rendering PDF: " + ex.getMessage());
-                    ex.printStackTrace();
-                }
-            } else {
-                nextImg = currentTopic.getTopicImage();
-            }
-
-            if (nextImg != null) {
-                // Topic has an image or PDF - show it
-                currentImageView.setImage(nextImg);
-                currentScrollPane.setVisible(true);
-                currentScrollPane.setManaged(true);
-                System.out.println("Next image/PDF and content loaded for rowId: " + currentTopic.getRowId());
-            } else {
-                // Topic has no image - hide the scroll pane
-                currentScrollPane.setVisible(false);
-                currentScrollPane.setManaged(false);
-                System.out.println("Next content loaded (no image) for rowId: " + currentTopic.getRowId());
-            }
-            // Always load the topic's content into the RichTextArea
-            database.loadContentIntoRichTextArea(currentTopic.getContent(), currentRichTextArea);
-
-            // Update controls based on the new topic
-            updateTopicControls();
-
-            // Update source info box
-            updateSourceInfo();
-
-            // Update page display if this is a PDF topic
-            if (currentTopic.isPdf() && pageNumberField != null) {
-                try {
-                    PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDF(currentTopic.getPdfPath());
-                    pageNumberField.setText(String.valueOf(currentTopic.getCurrentPage()));
-                    if (totalPagesLabel != null) {
-                        totalPagesLabel.setText("of " + pdfInfo.getTotalPages());
-                    }
-                } catch (Exception ex) {
-                    System.err.println("Error updating page display: " + ex.getMessage());
-                }
-            }
+            displayTopic(currentTopic);
         } else {
             System.out.println("No more topics available.");
         }
-
-        Platform.runLater(() -> updateCanvasSize());
     }
 
     private void openTopicWindow() {
@@ -504,23 +454,6 @@ public class Incremental extends Application {
         itemStage.setTitle("Item");
 
         currentImageView = new ImageView();
-
-        Image img = null;
-        if (currentTopic.isPdf()) {
-            // Render PDF page
-            try {
-                PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDF(currentTopic.getPdfPath());
-                img = PDFImageRenderer.renderPageToFXImage(pdfInfo, currentTopic.getCurrentPage());
-                System.out.println("Rendered PDF page " + currentTopic.getCurrentPage());
-            } catch (Exception ex) {
-                System.err.println("Error rendering PDF: " + ex.getMessage());
-                ex.printStackTrace();
-            }
-        } else {
-            img = currentTopic.getTopicImage();
-        }
-
-        currentImageView.setImage(img);
         currentImageView.setFitWidth(600);
         currentImageView.setPreserveRatio(true);
 
@@ -539,12 +472,6 @@ public class Incremental extends Application {
         currentScrollPane.setContent(imageContainer);
         currentScrollPane.setFitToWidth(true);
         currentScrollPane.setFitToHeight(true);
-
-        // Hide scroll pane if no image
-        if (img == null) {
-            currentScrollPane.setVisible(false);
-            currentScrollPane.setManaged(false);
-        }
 
         // Create context menu for image copying
         ContextMenu contextMenu = new ContextMenu();
@@ -600,14 +527,15 @@ public class Incremental extends Application {
         currentButtonBox.setPadding(new Insets(8));
 
         currentRichTextArea = new RichTextArea();
-        // Load existing content using the database method
-        database.loadContentIntoRichTextArea(currentTopic.getContent(), currentRichTextArea);
 
         // Setup auto-save functionality
         setupAutoSave();
 
         // Create source info box
         VBox sourceInfoBox = createSourceInfoBox();
+
+        // Load and display the topic content (this will handle image loading, content loading, and UI updates)
+        displayTopic(currentTopic);
 
         VBox vboxItem = new VBox();
         vboxItem.getChildren().addAll(
@@ -645,6 +573,152 @@ public class Incremental extends Application {
         Button source = (Button) e.getSource();
         Stage stage = (Stage) source.getScene().getWindow();
         stage.close();
+    }
+
+    private void displayTopic(Topic topic) {
+        if (topic == null) {
+            System.out.println("No topic to display.");
+            return;
+        }
+
+        // Load and render image/PDF
+        Image img = null;
+        if (topic.isPdf()) {
+            // Render PDF page
+            try {
+                PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDF(topic.getPdfPath());
+                img = PDFImageRenderer.renderPageToFXImage(pdfInfo, topic.getCurrentPage());
+                System.out.println("Rendered PDF page " + topic.getCurrentPage());
+            } catch (Exception ex) {
+                System.err.println("Error rendering PDF: " + ex.getMessage());
+                ex.printStackTrace();
+            }
+        } else {
+            img = topic.getTopicImage();
+        }
+
+        // Set image on currentImageView (if it exists)
+        if (currentImageView != null && img != null) {
+            currentImageView.setImage(img);
+            if (currentScrollPane != null) {
+                currentScrollPane.setVisible(true);
+                currentScrollPane.setManaged(true);
+            }
+            System.out.println("Image loaded for topic: " + topic.getRowId());
+        } else if (currentImageView != null && img == null) {
+            // Topic has no image - hide the scroll pane
+            if (currentScrollPane != null) {
+                currentScrollPane.setVisible(false);
+                currentScrollPane.setManaged(false);
+            }
+            System.out.println("No image to display for topic: " + topic.getRowId());
+        }
+
+        // Load content into RichTextArea (if it exists)
+        if (currentRichTextArea != null) {
+            database.loadContentIntoRichTextArea(topic.getContent(), currentRichTextArea);
+        }
+
+        // Update controls based on the new topic
+        updateTopicControls();
+
+        // Update source info box
+        updateSourceInfo();
+
+        // Update page display if this is a PDF topic
+        if (topic.isPdf() && pageNumberField != null) {
+            try {
+                PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDF(topic.getPdfPath());
+                pageNumberField.setText(String.valueOf(topic.getCurrentPage()));
+                if (totalPagesLabel != null) {
+                    totalPagesLabel.setText("of " + pdfInfo.getTotalPages());
+                }
+            } catch (Exception ex) {
+                System.err.println("Error updating page display: " + ex.getMessage());
+            }
+        }
+
+        // Update canvas size for drawing
+        Platform.runLater(() -> updateCanvasSize());
+    }
+
+    private VBox createZoomControls() {
+        // Create view options section
+        VBox viewSection = new VBox();
+        viewSection.getStyleClass().add("compact-section-container");
+        viewSection.setSpacing(4);
+
+        Label viewLabel = new Label("View Options");
+        viewLabel.getStyleClass().add("compact-section-title");
+
+        // Preset fit buttons
+        HBox fitBox = new HBox();
+        fitBox.getStyleClass().add("compact-button-group");
+
+        Button btnFitToPage = new Button("Fit Page");
+        btnFitToPage.getStyleClass().add("compact-tertiary-button");
+        Button btnFitToWidth = new Button("Fit Width");
+        btnFitToWidth.getStyleClass().add("compact-tertiary-button");
+
+        fitBox.getChildren().addAll(btnFitToPage, btnFitToWidth);
+
+        // Zoom controls
+        HBox zoomBox = new HBox();
+        zoomBox.getStyleClass().add("compact-form-group");
+        zoomBox.setSpacing(4);
+
+        Button btnZoomOut = new Button("➖");
+        btnZoomOut.getStyleClass().add("compact-secondary-button");
+        btnZoomOut.setTooltip(new Tooltip("Zoom out (Ctrl + -)"));
+
+        Button btnZoomIn = new Button("➕");
+        btnZoomIn.getStyleClass().add("compact-secondary-button");
+        btnZoomIn.setTooltip(new Tooltip("Zoom in (Ctrl + +)"));
+
+        zoomLevelLabel = new Label(Math.round(currentZoomLevel * 100) + "%");
+        zoomLevelLabel.setMinWidth(40);
+        zoomLevelLabel.getStyleClass().add("compact-section-title");
+
+        Button btnZoomReset = new Button("Reset");
+        btnZoomReset.getStyleClass().add("compact-tertiary-button");
+        btnZoomReset.setTooltip(new Tooltip("Reset zoom to 100%"));
+
+        zoomBox.getChildren().addAll(btnZoomOut, zoomLevelLabel, btnZoomIn, btnZoomReset);
+
+        viewSection.getChildren().addAll(viewLabel, fitBox, zoomBox);
+
+        // Set up event handlers
+        btnFitToPage.setOnAction(event -> {
+            currentZoomLevel = Math.min(
+                    (currentScrollPane.getWidth() - 20) / currentImageView.getImage().getWidth(),
+                    (currentScrollPane.getHeight() - 20) / currentImageView.getImage().getHeight());
+            applyZoom();
+            System.out.println("Fit to page");
+        });
+
+        btnFitToWidth.setOnAction(event -> {
+            currentZoomLevel = (currentScrollPane.getWidth() - 20) / currentImageView.getImage().getWidth();
+            applyZoom();
+            System.out.println("Fit to width");
+        });
+
+        // Zoom controls
+        btnZoomIn.setOnAction(event -> {
+            currentZoomLevel = Math.min(currentZoomLevel * 1.25, 5.0); // Max 500%
+            applyZoom();
+        });
+
+        btnZoomOut.setOnAction(event -> {
+            currentZoomLevel = Math.max(currentZoomLevel / 1.25, 0.1); // Min 10%
+            applyZoom();
+        });
+
+        btnZoomReset.setOnAction(event -> {
+            currentZoomLevel = 1.0;
+            applyZoom();
+        });
+
+        return viewSection;
     }
 
     private void handleOpenSourceAsTopic(ActionEvent e) {
@@ -848,49 +922,8 @@ public class Incremental extends Application {
 
             navigationSection.getChildren().addAll(navLabel, pageNavBox, pageInfoBox);
 
-            // Create view options section
-            VBox viewSection = new VBox();
-            viewSection.getStyleClass().add("compact-section-container");
-            viewSection.setSpacing(4);
-
-            Label viewLabel = new Label("View Options");
-            viewLabel.getStyleClass().add("compact-section-title");
-
-            // Preset fit buttons
-            HBox fitBox = new HBox();
-            fitBox.getStyleClass().add("compact-button-group");
-
-            Button btnFitToPage = new Button("Fit Page");
-            btnFitToPage.getStyleClass().add("compact-tertiary-button");
-            Button btnFitToWidth = new Button("Fit Width");
-            btnFitToWidth.getStyleClass().add("compact-tertiary-button");
-
-            fitBox.getChildren().addAll(btnFitToPage, btnFitToWidth);
-
-            // Zoom controls
-            HBox zoomBox = new HBox();
-            zoomBox.getStyleClass().add("compact-form-group");
-            zoomBox.setSpacing(4);
-
-            Button btnZoomOut = new Button("➖");
-            btnZoomOut.getStyleClass().add("compact-secondary-button");
-            btnZoomOut.setTooltip(new Tooltip("Zoom out (Ctrl + -)"));
-
-            Button btnZoomIn = new Button("➕");
-            btnZoomIn.getStyleClass().add("compact-secondary-button");
-            btnZoomIn.setTooltip(new Tooltip("Zoom in (Ctrl + +)"));
-
-            zoomLevelLabel = new Label(Math.round(currentZoomLevel * 100) + "%");
-            zoomLevelLabel.setMinWidth(40);
-            zoomLevelLabel.getStyleClass().add("compact-section-title");
-
-            Button btnZoomReset = new Button("Reset");
-            btnZoomReset.getStyleClass().add("compact-tertiary-button");
-            btnZoomReset.setTooltip(new Tooltip("Reset zoom to 100%"));
-
-            zoomBox.getChildren().addAll(btnZoomOut, zoomLevelLabel, btnZoomIn, btnZoomReset);
-
-            viewSection.getChildren().addAll(viewLabel, fitBox, zoomBox);
+            // Create view options section using shared zoom controls
+            VBox viewSection = createZoomControls();
 
             // Create drawing section
             VBox drawingSection = new VBox();
@@ -925,37 +958,6 @@ public class Incremental extends Application {
             btnJumpToPage.setOnAction(event -> jumpToPage());
             pageNumberField.setOnAction(event -> jumpToPage());
 
-            // Fit to preset sizes
-            btnFitToPage.setOnAction(event -> {
-                currentZoomLevel = Math.min(
-                        (currentScrollPane.getWidth() - 20) / currentImageView.getImage().getWidth(),
-                        (currentScrollPane.getHeight() - 20) / currentImageView.getImage().getHeight());
-                applyZoom();
-                System.out.println("Fit to page");
-            });
-
-            btnFitToWidth.setOnAction(event -> {
-                currentZoomLevel = (currentScrollPane.getWidth() - 20) / currentImageView.getImage().getWidth();
-                applyZoom();
-                System.out.println("Fit to width");
-            });
-
-            // Zoom controls
-            btnZoomIn.setOnAction(event -> {
-                currentZoomLevel = Math.min(currentZoomLevel * 1.25, 5.0); // Max 500%
-                applyZoom();
-            });
-
-            btnZoomOut.setOnAction(event -> {
-                currentZoomLevel = Math.max(currentZoomLevel / 1.25, 0.1); // Min 10%
-                applyZoom();
-            });
-
-            btnZoomReset.setOnAction(event -> {
-                currentZoomLevel = 1.0;
-                applyZoom();
-            });
-
             // Drawing controls
             btnDrawMode.setOnAction(event -> toggleDrawMode(btnDrawMode));
             btnClearRects.setOnAction(event -> clearRectangles());
@@ -968,83 +970,11 @@ public class Incremental extends Application {
 
     private void addImageControls() {
         try {
-            // Create view options section for images
-            VBox viewSection = new VBox();
-            viewSection.getStyleClass().add("compact-section-container");
-            viewSection.setSpacing(4);
-
-            Label viewLabel = new Label("Image Controls");
-            viewLabel.getStyleClass().add("compact-section-title");
-
-            // Preset fit buttons
-            HBox fitBox = new HBox();
-            fitBox.getStyleClass().add("compact-button-group");
-
-            Button btnFitToPage = new Button("Fit Page");
-            btnFitToPage.getStyleClass().add("compact-tertiary-button");
-            Button btnFitToWidth = new Button("Fit Width");
-            btnFitToWidth.getStyleClass().add("compact-tertiary-button");
-
-            fitBox.getChildren().addAll(btnFitToPage, btnFitToWidth);
-
-            // Zoom controls
-            HBox zoomBox = new HBox();
-            zoomBox.getStyleClass().add("compact-form-group");
-            zoomBox.setSpacing(4);
-
-            Button btnZoomOut = new Button("➖");
-            btnZoomOut.getStyleClass().add("compact-secondary-button");
-            btnZoomOut.setTooltip(new Tooltip("Zoom out (Ctrl + -)"));
-
-            Button btnZoomIn = new Button("➕");
-            btnZoomIn.getStyleClass().add("compact-secondary-button");
-            btnZoomIn.setTooltip(new Tooltip("Zoom in (Ctrl + +)"));
-
-            zoomLevelLabel = new Label(Math.round(currentZoomLevel * 100) + "%");
-            zoomLevelLabel.setMinWidth(40);
-            zoomLevelLabel.getStyleClass().add("compact-section-title");
-
-            Button btnZoomReset = new Button("Reset");
-            btnZoomReset.getStyleClass().add("compact-tertiary-button");
-            btnZoomReset.setTooltip(new Tooltip("Reset zoom to 100%"));
-
-            zoomBox.getChildren().addAll(btnZoomOut, zoomLevelLabel, btnZoomIn, btnZoomReset);
-
-            viewSection.getChildren().addAll(viewLabel, fitBox, zoomBox);
+            // Use shared zoom controls for images
+            VBox viewSection = createZoomControls();
 
             // Add section to main button box
             currentButtonBox.getChildren().add(viewSection);
-
-            // Set up event handlers - same as PDF controls
-            btnFitToPage.setOnAction(event -> {
-                currentZoomLevel = Math.min(
-                        (currentScrollPane.getWidth() - 20) / currentImageView.getImage().getWidth(),
-                        (currentScrollPane.getHeight() - 20) / currentImageView.getImage().getHeight());
-                applyZoom();
-                System.out.println("Fit to page");
-            });
-
-            btnFitToWidth.setOnAction(event -> {
-                currentZoomLevel = (currentScrollPane.getWidth() - 20) / currentImageView.getImage().getWidth();
-                applyZoom();
-                System.out.println("Fit to width");
-            });
-
-            // Zoom controls
-            btnZoomIn.setOnAction(event -> {
-                currentZoomLevel = Math.min(currentZoomLevel * 1.25, 5.0); // Max 500%
-                applyZoom();
-            });
-
-            btnZoomOut.setOnAction(event -> {
-                currentZoomLevel = Math.max(currentZoomLevel / 1.25, 0.1); // Min 10%
-                applyZoom();
-            });
-
-            btnZoomReset.setOnAction(event -> {
-                currentZoomLevel = 1.0;
-                applyZoom();
-            });
 
         } catch (Exception ex) {
             System.err.println("Error setting up image controls: " + ex.getMessage());
@@ -1066,9 +996,8 @@ public class Incremental extends Application {
             currentTopic.setCurrentPage(newPage);
             database.updatePDFPage(currentTopic.getRowId(), newPage);
 
-            // Re-render the page
-            Image newImg = PDFImageRenderer.renderPageToFXImage(pdfInfo, newPage);
-            currentImageView.setImage(newImg);
+            // Re-display the topic with the new page
+            displayTopic(currentTopic);
 
             // Apply current zoom level to new page
             applyZoom();
@@ -1081,14 +1010,7 @@ public class Incremental extends Application {
                 }
             });
 
-            // Update page number field
-            if (pageNumberField != null) {
-                pageNumberField.setText(String.valueOf(newPage));
-            }
-
             System.out.println("Moved to page " + newPage + " of " + pdfInfo.getTotalPages());
-
-            updateCanvasSize();
 
         } catch (Exception ex) {
             System.err.println("Error navigating to page " + newPage + ": " + ex.getMessage());
