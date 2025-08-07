@@ -59,6 +59,7 @@ public class Incremental extends Application {
     private Database database;
     private RichTextArea currentRichTextArea;
     private Topic currentTopic;
+    private Label currentSourceLabel;
     private HBox currentButtonBox;
     private TextField pageNumberField;
     private Label totalPagesLabel;
@@ -467,6 +468,9 @@ public class Incremental extends Application {
 
             // Update controls based on the new topic
             updateTopicControls();
+            
+            // Update source info box
+            updateSourceInfo();
 
             // Update page display if this is a PDF topic
             if (currentTopic.isPdf() && pageNumberField != null) {
@@ -580,7 +584,8 @@ public class Incremental extends Application {
         mainControlsSection.getChildren().addAll(mainLabel, mainButtons);
         currentButtonBox.getChildren().add(mainControlsSection);
 
-        // Add PDF controls if this is a PDF topic, otherwise add image controls for regular images and extracts
+        // Add PDF controls if this is a PDF topic, otherwise add image controls for
+        // regular images and extracts
         if (currentTopic.isPdf()) {
             addPDFControls();
         } else if (currentImageView.getImage() != null) {
@@ -598,11 +603,15 @@ public class Incremental extends Application {
         // Setup auto-save functionality
         setupAutoSave();
 
+        // Create source info box
+        VBox sourceInfoBox = createSourceInfoBox();
+
         VBox vboxItem = new VBox();
         vboxItem.getChildren().addAll(
                 currentButtonBox,
                 currentScrollPane,
-                currentRichTextArea);
+                currentRichTextArea,
+                sourceInfoBox);
         vboxItem.setSpacing(10);
         vboxItem.setPadding(new Insets(10));
 
@@ -1220,6 +1229,69 @@ public class Incremental extends Application {
             drawingCanvas.setHeight(currentImageView.getBoundsInLocal().getHeight());
             refreshRectangles();
         }
+    }
+
+    private VBox createSourceInfoBox() {
+        VBox infoBox = new VBox();
+        infoBox.getStyleClass().add("section-container");
+        infoBox.setSpacing(4);
+
+        currentSourceLabel = new Label();
+        currentSourceLabel.getStyleClass().add("info-text");
+        
+        // Set initial content
+        updateSourceInfo();
+
+        infoBox.getChildren().addAll(currentSourceLabel);
+        return infoBox;
+    }
+
+    private void updateSourceInfo() {
+        if (currentSourceLabel == null) {
+            return;
+        }
+        
+        if (currentTopic != null) {
+            String kind = currentTopic.getKind();
+            if (kind == null) kind = "unknown";
+            
+            switch (kind.toLowerCase()) {
+                case "pdf":
+                    if (currentTopic.isPdf()) {
+                        String fileName = getFileNameFromPath(currentTopic.getPdfPath());
+                        currentSourceLabel.setText("PDF: " + fileName + " (Page " + currentTopic.getCurrentPage() + ")");
+                    } else {
+                        currentSourceLabel.setText("PDF (no path available)");
+                    }
+                    break;
+                case "extract":
+                    if (currentTopic.getTopicParent() > 0) {
+                        String parentPdfPath = database.getParentPdfPath(currentTopic.getTopicParent());
+                        if (parentPdfPath != null) {
+                            String fileName = getFileNameFromPath(parentPdfPath);
+                            currentSourceLabel.setText("Extract from PDF: " + fileName);
+                        } else {
+                            currentSourceLabel.setText("Extract from PDF (parent topic not found)");
+                        }
+                    } else {
+                        currentSourceLabel.setText("Extract from PDF (no parent topic)");
+                    }
+                    break;
+                case "image":
+                default:
+                    currentSourceLabel.setText("Image (Topic ID: " + currentTopic.getRowId() + ")");
+                    break;
+            }
+        } else {
+            currentSourceLabel.setText("No topic loaded");
+        }
+    }
+
+    private String getFileNameFromPath(String path) {
+        if (path == null || path.isEmpty()) {
+            return "Unknown file";
+        }
+        return path.substring(path.lastIndexOf('/') + 1);
     }
 
     public static Image bufferedImageToFXImage(BufferedImage bufferedImage) {
