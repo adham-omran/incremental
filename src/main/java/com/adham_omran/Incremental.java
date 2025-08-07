@@ -571,22 +571,15 @@ public class Incremental extends Application {
         Platform.runLater(() -> updateCanvasSize());
     }
 
-    private HBox createPageNavigationControls(boolean isCompact) {
-        HBox navigationBox = new HBox();
-        navigationBox.getStyleClass().add(isCompact ? "compact-button-group" : "button-group");
-        navigationBox.setSpacing(4);
-
+    private Button[] createPageNavigationButtons(boolean isCompact) {
         Button btnPrevPage = new Button("◀ Prev");
         btnPrevPage.getStyleClass().add(isCompact ? "compact-secondary-button" : "secondary-button");
 
         Button btnNextPage = new Button("Next ▶");
         btnNextPage.getStyleClass().add(isCompact ? "compact-secondary-button" : "secondary-button");
 
-        navigationBox.getChildren().addAll(btnPrevPage, btnNextPage);
-
-        // Return the controls - handlers will be set by the caller
-        // since they need access to the specific PDF topic and viewer context
-        return navigationBox;
+        // Return array: [prevButton, nextButton]
+        return new Button[]{btnPrevPage, btnNextPage};
     }
 
     private VBox createZoomControls() {
@@ -746,9 +739,9 @@ public class Incremental extends Application {
         }
 
         // Create simple page controls using shared navigation
-        HBox navigationControls = createPageNavigationControls(true); // compact style
-        Button btnPrevPage = (Button) navigationControls.getChildren().get(0);
-        Button btnNextPage = (Button) navigationControls.getChildren().get(1);
+        Button[] navButtons = createPageNavigationButtons(true); // compact style
+        Button btnPrevPage = navButtons[0];
+        Button btnNextPage = navButtons[1];
 
         Label pageLabel = new Label("Page " + pdfTopic.getCurrentPage());
 
@@ -835,9 +828,13 @@ public class Incremental extends Application {
             navLabel.getStyleClass().add("compact-section-title");
 
             // Page navigation controls using shared navigation
-            HBox pageNavBox = createPageNavigationControls(true); // compact style
-            Button btnPrevPage = (Button) pageNavBox.getChildren().get(0);
-            Button btnNextPage = (Button) pageNavBox.getChildren().get(1);
+            Button[] navButtons = createPageNavigationButtons(true); // compact style
+            Button btnPrevPage = navButtons[0];
+            Button btnNextPage = navButtons[1];
+
+            HBox pageNavBox = new HBox();
+            pageNavBox.getStyleClass().add("compact-button-group");
+            pageNavBox.getChildren().addAll(btnPrevPage, btnNextPage);
 
             // Page number display and jump
             HBox pageInfoBox = new HBox();
@@ -857,7 +854,6 @@ public class Incremental extends Application {
             btnJumpToPage.setTooltip(new Tooltip("Jump to the specified page"));
 
             pageInfoBox.getChildren().addAll(pageLabel, pageNumberField, totalPagesLabel, btnJumpToPage);
-            pageNavBox.getChildren().addAll(btnPrevPage, btnNextPage);
 
             navigationSection.getChildren().addAll(navLabel, pageNavBox, pageInfoBox);
 
