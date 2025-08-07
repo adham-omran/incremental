@@ -160,28 +160,14 @@ public class Incremental extends Application {
             // Save to DB
             Database dbDatabase = new Database();
             ClipboardUtils cp = new ClipboardUtils();
-            String originalString = btnClipboard.getText();
-            btnClipboard.setText("💾 Saving...");
-            btnClipboard.getStyleClass().removeAll("primary-button");
-            btnClipboard.getStyleClass().add("loading-button");
-            btnClipboard.setDisable(true);
+            ButtonStateManager.showLoadingState(btnClipboard, "💾 Saving...");
 
             BufferedImage bufferedImage;
             java.awt.Image awtImage = cp.getImageFromClipboard();
 
             // Check if clipboard contains an image
             if (awtImage == null) {
-                btnClipboard.setText("❌ No image in clipboard");
-                btnClipboard.getStyleClass().removeAll("loading-button");
-                btnClipboard.getStyleClass().add("error-button");
-                btnClipboard.setDisable(false);
-                // Reset button text after 3 seconds
-                Timeline resetTimer = new Timeline(new KeyFrame(Duration.seconds(3), resetEvent -> {
-                    btnClipboard.setText(originalString);
-                    btnClipboard.getStyleClass().removeAll("error-button");
-                    btnClipboard.getStyleClass().add("primary-button");
-                }));
-                resetTimer.play();
+                ButtonStateManager.showErrorState(btnClipboard, "❌ No image in clipboard", 3.0);
                 return;
             }
 
@@ -205,32 +191,10 @@ public class Incremental extends Application {
                 ImageIO.write(bufferedImage, "png", os);
                 InputStream fis = new ByteArrayInputStream(os.toByteArray());
                 dbDatabase.saveImage(fis, os.size());
-                btnClipboard.setText("✅ Saved!");
-                btnClipboard.getStyleClass().removeAll("loading-button");
-                btnClipboard.getStyleClass().add("success-button");
-                btnClipboard.setDisable(false);
-
-                // Reset button after 2 seconds
-                Timeline resetTimer = new Timeline(new KeyFrame(Duration.seconds(2), resetEvent -> {
-                    btnClipboard.setText(originalString);
-                    btnClipboard.getStyleClass().removeAll("success-button");
-                    btnClipboard.getStyleClass().add("primary-button");
-                }));
-                resetTimer.play();
+                ButtonStateManager.showSuccessState(btnClipboard, "✅ Saved!", 2.0);
 
             } catch (IOException e) {
-                btnClipboard.setText("❌ Save failed");
-                btnClipboard.getStyleClass().removeAll("loading-button");
-                btnClipboard.getStyleClass().add("error-button");
-                btnClipboard.setDisable(false);
-                // Reset button text after 3 seconds
-                Timeline resetTimer = new Timeline(new KeyFrame(Duration.seconds(3), resetEvent -> {
-                    btnClipboard.setText(originalString);
-                    btnClipboard.getStyleClass().removeAll("error-button");
-                    btnClipboard.getStyleClass().add("primary-button");
-                }));
-                resetTimer.play();
-
+                ButtonStateManager.showErrorState(btnClipboard, "❌ Save failed", 3.0);
                 e.printStackTrace();
             }
         });
@@ -244,40 +208,14 @@ public class Incremental extends Application {
             File selectedFile = fileChooser.showOpenDialog(stage);
             if (selectedFile != null) {
                 Database dbDatabase = new Database();
-                String originalText = btnAddPDF.getText();
-                btnAddPDF.setText("📥 Loading...");
-                btnAddPDF.getStyleClass().removeAll("secondary-button");
-                btnAddPDF.getStyleClass().add("loading-button");
-                btnAddPDF.setDisable(true);
+                ButtonStateManager.showLoadingState(btnAddPDF, "📥 Loading...");
 
                 try {
                     dbDatabase.savePDF(selectedFile.getAbsolutePath());
-                    btnAddPDF.setText("✅ PDF Loaded!");
-                    btnAddPDF.getStyleClass().removeAll("loading-button");
-                    btnAddPDF.getStyleClass().add("success-button");
-
-                    // Reset button after 2 seconds
-                    Timeline resetTimer = new Timeline(new KeyFrame(Duration.seconds(2), resetEvent -> {
-                        btnAddPDF.setText(originalText);
-                        btnAddPDF.getStyleClass().removeAll("success-button");
-                        btnAddPDF.getStyleClass().add("secondary-button");
-                        btnAddPDF.setDisable(false);
-                    }));
-                    resetTimer.play();
+                    ButtonStateManager.showSuccessState(btnAddPDF, "✅ PDF Loaded!", 2.0);
 
                 } catch (Exception e) {
-                    btnAddPDF.setText("❌ Load Failed");
-                    btnAddPDF.getStyleClass().removeAll("loading-button");
-                    btnAddPDF.getStyleClass().add("error-button");
-                    btnAddPDF.setDisable(false);
-
-                    Timeline resetTimer = new Timeline(new KeyFrame(Duration.seconds(2), resetEvent -> {
-                        btnAddPDF.setText(originalText);
-                        btnAddPDF.getStyleClass().removeAll("error-button");
-                        btnAddPDF.getStyleClass().add("secondary-button");
-                    }));
-                    resetTimer.play();
-
+                    ButtonStateManager.showErrorState(btnAddPDF, "❌ Load Failed", 2.0);
                     e.printStackTrace();
                 }
             }
@@ -633,6 +571,24 @@ public class Incremental extends Application {
         Platform.runLater(() -> updateCanvasSize());
     }
 
+    private HBox createPageNavigationControls(boolean isCompact) {
+        HBox navigationBox = new HBox();
+        navigationBox.getStyleClass().add(isCompact ? "compact-button-group" : "button-group");
+        navigationBox.setSpacing(4);
+
+        Button btnPrevPage = new Button("◀ Prev");
+        btnPrevPage.getStyleClass().add(isCompact ? "compact-secondary-button" : "secondary-button");
+
+        Button btnNextPage = new Button("Next ▶");
+        btnNextPage.getStyleClass().add(isCompact ? "compact-secondary-button" : "secondary-button");
+
+        navigationBox.getChildren().addAll(btnPrevPage, btnNextPage);
+
+        // Return the controls - handlers will be set by the caller
+        // since they need access to the specific PDF topic and viewer context
+        return navigationBox;
+    }
+
     private VBox createZoomControls() {
         // Create view options section
         VBox viewSection = new VBox();
@@ -789,19 +745,16 @@ public class Incremental extends Application {
             pdfImageView.setPreserveRatio(true);
         }
 
-        // Create simple page controls
-        HBox pageControls = new HBox();
-        pageControls.getStyleClass().add("button-group");
-        pageControls.setSpacing(4);
-
-        Button btnPrevPage = new Button("◀ Prev");
-        btnPrevPage.getStyleClass().add("compact-secondary-button");
+        // Create simple page controls using shared navigation
+        HBox navigationControls = createPageNavigationControls(true); // compact style
+        Button btnPrevPage = (Button) navigationControls.getChildren().get(0);
+        Button btnNextPage = (Button) navigationControls.getChildren().get(1);
 
         Label pageLabel = new Label("Page " + pdfTopic.getCurrentPage());
 
-        Button btnNextPage = new Button("Next ▶");
-        btnNextPage.getStyleClass().add("compact-secondary-button");
-
+        HBox pageControls = new HBox();
+        pageControls.getStyleClass().add("button-group");  
+        pageControls.setSpacing(4);
         pageControls.getChildren().addAll(btnPrevPage, pageLabel, btnNextPage);
 
         // Simple page navigation handlers
@@ -881,15 +834,10 @@ public class Incremental extends Application {
             Label navLabel = new Label("Page Navigation");
             navLabel.getStyleClass().add("compact-section-title");
 
-            // Page navigation controls
-            HBox pageNavBox = new HBox();
-            pageNavBox.getStyleClass().add("compact-button-group");
-
-            Button btnPrevPage = new Button("◀ Prev");
-            btnPrevPage.getStyleClass().add("compact-secondary-button");
-
-            Button btnNextPage = new Button("Next ▶");
-            btnNextPage.getStyleClass().add("compact-secondary-button");
+            // Page navigation controls using shared navigation
+            HBox pageNavBox = createPageNavigationControls(true); // compact style
+            Button btnPrevPage = (Button) pageNavBox.getChildren().get(0);
+            Button btnNextPage = (Button) pageNavBox.getChildren().get(1);
 
             // Page number display and jump
             HBox pageInfoBox = new HBox();
