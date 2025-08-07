@@ -67,7 +67,6 @@ public class Database {
         }
     }
 
-    /* TODO: Rename to nextTopic */
     public Topic nextTopic() {
         String sql = "select rowid, * from images order by scheduled_at asc";
         Topic topic = new Topic();
@@ -83,10 +82,10 @@ public class Database {
                 // Set kind and parent_topic fields
                 topic.setKind(rs.getString("kind"));
                 topic.setTopicParent(rs.getInt("parent_topic"));
-                
+
                 // Set pdf_page if it exists (for extracts)
-                Integer pdfPage = rs.getObject("pdf_page", Integer.class);
-                topic.setPdfPage(pdfPage);
+                int pdfPageInt = rs.getInt("pdf_page");
+                topic.setPdfPage(pdfPageInt);
 
                 // Check for PDF first
                 String pdfPath = rs.getString("pdf_path");
@@ -127,10 +126,10 @@ public class Database {
                 topic.setRowId(rowid);
                 topic.setKind(rs.getString("kind"));
                 topic.setTopicParent(rs.getInt("parent_topic"));
-                
+
                 // Set pdf_page if it exists (for extracts)
-                Integer pdfPage = rs.getObject("pdf_page", Integer.class);
-                topic.setPdfPage(pdfPage);
+                int pdfPageInt = rs.getInt("pdf_page");
+                topic.setPdfPage(pdfPageInt);
 
                 // Check for PDF first
                 String pdfPath = rs.getString("pdf_path");
