@@ -105,6 +105,7 @@ public class Incremental extends Application {
         scene.getStylesheets().add(getClass().getResource("/styles.css").toExternalForm());
 
         stage.setTitle("Incremental");
+        stage.getIcons().add(new Image(getClass().getResourceAsStream("/icon.png")));
         stage.setScene(scene);
         stage.setMinWidth(700);
         stage.setMinHeight(600);
@@ -137,6 +138,7 @@ public class Incremental extends Application {
 
         Stage itemStage = new Stage();
         itemStage.setTitle("Item");
+        itemStage.getIcons().add(new Image(getClass().getResourceAsStream("/icon.png")));
 
         currentImageView = new ImageView();
         currentImageView.setFitWidth(600);
@@ -492,6 +494,7 @@ public class Incremental extends Application {
     private void openLightweightPdfViewer(Topic pdfTopic) {
         Stage viewerStage = new Stage();
         viewerStage.setTitle("Source PDF - " + getFileNameFromPath(pdfTopic.getPdfPath()));
+        viewerStage.getIcons().add(new Image(getClass().getResourceAsStream("/icon.png")));
 
         // Create image view for PDF display
         ImageView pdfImageView = new ImageView();
@@ -1270,6 +1273,7 @@ public class Incremental extends Application {
         // Create new stage for table
         Stage stageTable = new Stage();
         stageTable.setTitle("All Topics");
+        stageTable.getIcons().add(new Image(getClass().getResourceAsStream("/icon.png")));
 
         // Get all topics from database
         List<TopicTableData> allTopics = database.getAllTopics();
