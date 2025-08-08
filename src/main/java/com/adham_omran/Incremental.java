@@ -1352,7 +1352,7 @@ public class Incremental extends Application {
 
         // Create refresh button
         Button refreshButton = UIComponentFactory.createButton("🔄 Refresh", "secondary-button",
-                Refresh table data from database");
+                "Refresh table data from database");
         refreshButton.setOnAction(refreshEvent -> {
             // Reload data from database
             List<TopicTableData> updatedTopics = database.getAllTopics();
