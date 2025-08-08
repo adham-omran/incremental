@@ -27,6 +27,10 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import jfx.incubator.scene.control.richtext.RichTextArea;
+import java.awt.Toolkit;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
+import java.awt.datatransfer.UnsupportedFlavorException;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.input.Clipboard;
@@ -49,7 +53,7 @@ public class Incremental extends Application {
     private ImageView currentImageView;
     private ScrollPane currentScrollPane;
     private Timeline saveTimer;
-    private Database database;
+    private DatabaseService database;
     private RichTextArea currentRichTextArea;
     private Topic currentTopic;
     private Label currentSourceLabel;
@@ -65,325 +69,36 @@ public class Incremental extends Application {
     private StackPane imageContainer;
     private double drawStartX, drawStartY;
     private boolean isDragging = false;
+    private TextField txtInput; // Text field for direct topic access
 
     @Override
     public void start(Stage stage) throws IOException {
         // Layout
 
         // Initialize database
-        database = new Database();
+        database = new DatabaseService();
 
         // Create main container
         VBox mainContainer = new VBox();
         mainContainer.getStyleClass().add("main-container");
 
-        // Content Actions Section
-        VBox contentSection = new VBox();
-        contentSection.getStyleClass().add("section-container");
-
-        Label contentLabel = new Label("Content Actions");
-        contentLabel.getStyleClass().add("section-title");
-
-        HBox contentButtons = new HBox();
-        contentButtons.getStyleClass().add("button-group");
-
-        Button btnClipboard = new Button("Save from Clipboard");
-        btnClipboard.getStyleClass().add("primary-button");
-        btnClipboard.setTooltip(new Tooltip("Save an image from your clipboard to the database"));
-
-        Button btnAddPDF = new Button("Add PDF");
-        btnAddPDF.getStyleClass().add("secondary-button");
-        btnAddPDF.setTooltip(new Tooltip("Import a PDF file for study"));
-
-        contentButtons.getChildren().addAll(btnClipboard, btnAddPDF);
-        contentSection.getChildren().addAll(contentLabel, contentButtons);
-
-        // Navigation Section
-        VBox navigationSection = new VBox();
-        navigationSection.getStyleClass().add("section-container");
-
-        Label navigationLabel = new Label("Navigation");
-        navigationLabel.getStyleClass().add("section-title");
-
-        HBox navigationButtons = new HBox();
-        navigationButtons.getStyleClass().add("button-group");
-
-        Button btnNext = new Button("Next Topic");
-        btnNext.getStyleClass().add("secondary-button");
-        btnNext.setTooltip(new Tooltip("Open the next topic scheduled for review"));
-
-        Button btnTable = new Button("View Table");
-        btnTable.getStyleClass().add("tertiary-button");
-        btnTable.setTooltip(new Tooltip("View all topics in a sortable table"));
-
-        navigationButtons.getChildren().addAll(btnNext, btnTable);
-        navigationSection.getChildren().addAll(navigationLabel, navigationButtons);
-
-        // Direct Access Section
-        VBox accessSection = new VBox();
-        accessSection.getStyleClass().add("section-container");
-
-        Label accessLabel = new Label("Direct Access");
-        accessLabel.getStyleClass().add("section-title");
-
-        HBox accessForm = new HBox();
-        accessForm.getStyleClass().add("form-group");
-
-        Label idLabel = new Label("Topic ID:");
-        TextField txtInput = new TextField();
-        txtInput.setPromptText("Enter topic ID...");
-        txtInput.getStyleClass().add("text-field");
+        // Create text input field for direct access
+        TextField txtInput = UIComponentFactory.createTextField("Enter topic ID...");
         txtInput.setTooltip(new Tooltip("Enter a specific topic ID to open directly"));
 
-        Button btnTopicWithId = new Button("🔍 Open");
-        btnTopicWithId.getStyleClass().add("tertiary-button");
-        btnTopicWithId.setTooltip(new Tooltip("Open the topic with the specified ID"));
+        // Build UI sections using factory methods
+        VBox contentSection = UIBuilder.buildContentActionsSection(this::handleClipboardSave, this::handlePdfAdd);
+        VBox navigationSection = UIBuilder.buildNavigationSection(this::handleNext, this::handleTable);  
+        VBox accessSection = UIBuilder.buildDirectAccessSection(txtInput, this::handleTopicWithId);
 
         // Add Enter key support for the ID field
-        txtInput.setOnAction(event -> btnTopicWithId.fire());
-
-        accessForm.getChildren().addAll(idLabel, txtInput, btnTopicWithId);
-        accessSection.getChildren().addAll(accessLabel, accessForm);
+        txtInput.setOnAction(event -> handleTopicWithId(null));
 
         // Add all sections to main container
         mainContainer.getChildren().addAll(contentSection, navigationSection, accessSection);
 
-        btnClipboard.setOnAction(event -> {
-            // Save to DB
-            Database dbDatabase = new Database();
-            ClipboardUtils cp = new ClipboardUtils();
-            ButtonStateManager.showLoadingState(btnClipboard, "💾 Saving...");
-
-            BufferedImage bufferedImage;
-            java.awt.Image awtImage = cp.getImageFromClipboard();
-
-            // Check if clipboard contains an image
-            if (awtImage == null) {
-                ButtonStateManager.showErrorState(btnClipboard, "❌ No image in clipboard", 3.0);
-                return;
-            }
-
-            // Convert to BufferedImage using ImageUtils
-            bufferedImage = ImageUtils.awtImageToBufferedImage(awtImage);
-            if (bufferedImage != null) {
-                System.out.println("Image conversion successful.");
-            } else {
-                ButtonStateManager.showErrorState(btnClipboard, "❌ Image conversion failed", 3.0);
-                return;
-            }
-            // Save the image using ImageUtils
-            InputStream imageStream = ImageUtils.bufferedImageToInputStream(bufferedImage);
-            int imageSize = ImageUtils.getBufferedImageByteSize(bufferedImage);
-
-            if (imageStream != null && imageSize > 0) {
-                dbDatabase.saveImage(imageStream, imageSize);
-                ButtonStateManager.showSuccessState(btnClipboard, "✅ Saved!", 2.0);
-            } else {
-                ButtonStateManager.showErrorState(btnClipboard, "❌ Save failed", 3.0);
-            }
-        });
-
-        btnAddPDF.setOnAction(event -> {
-            FileChooser fileChooser = new FileChooser();
-            fileChooser.setTitle("Select PDF File");
-            fileChooser.getExtensionFilters().add(
-                    new FileChooser.ExtensionFilter("PDF Files", "*.pdf"));
-
-            File selectedFile = fileChooser.showOpenDialog(stage);
-            if (selectedFile != null) {
-                Database dbDatabase = new Database();
-                ButtonStateManager.showLoadingState(btnAddPDF, "📥 Loading...");
-
-                try {
-                    dbDatabase.savePDF(selectedFile.getAbsolutePath());
-                    ButtonStateManager.showSuccessState(btnAddPDF, "✅ PDF Loaded!", 2.0);
-
-                } catch (Exception e) {
-                    ButtonStateManager.showErrorState(btnAddPDF, "❌ Load Failed", 2.0);
-                    e.printStackTrace();
-                }
-            }
-        });
-
-        btnTable.setOnAction(e -> {
-            System.out.println("Opening topics table.");
-
-            // Create new stage for table
-            Stage stageTable = new Stage();
-            stageTable.setTitle("All Topics");
-
-            // Get all topics from database
-            List<TopicTableData> allTopics = database.getAllTopics();
-            ObservableList<TopicTableData> data = FXCollections.observableArrayList(allTopics);
-
-            // Create table with improved sizing
-            TableView<TopicTableData> table = new TableView<>();
-            table.setItems(data);
-            table.setEditable(false);
-            table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-
-            // Create columns with better widths and more information
-            TableColumn<TopicTableData, Integer> idCol = new TableColumn<>("ID");
-            idCol.setCellValueFactory(new PropertyValueFactory<>("id"));
-            idCol.setPrefWidth(50);
-            idCol.setMinWidth(40);
-
-            TableColumn<TopicTableData, String> typeCol = new TableColumn<>("Type");
-            typeCol.setCellValueFactory(new PropertyValueFactory<>("type"));
-            typeCol.setPrefWidth(80);
-            typeCol.setMinWidth(60);
-
-            TableColumn<TopicTableData, String> titleCol = new TableColumn<>("Title");
-            titleCol.setCellValueFactory(new PropertyValueFactory<>("title"));
-            titleCol.setPrefWidth(200);
-            titleCol.setMinWidth(150);
-
-            TableColumn<TopicTableData, String> sourceCol = new TableColumn<>("Source");
-            sourceCol.setCellValueFactory(new PropertyValueFactory<>("source"));
-            sourceCol.setPrefWidth(160);
-            sourceCol.setMinWidth(120);
-
-            TableColumn<TopicTableData, String> addedCol = new TableColumn<>("Added");
-            addedCol.setCellValueFactory(new PropertyValueFactory<>("addedDate"));
-            addedCol.setPrefWidth(120);
-            addedCol.setMinWidth(100);
-
-            TableColumn<TopicTableData, String> scheduledCol = new TableColumn<>("Scheduled");
-            scheduledCol.setCellValueFactory(new PropertyValueFactory<>("scheduledDate"));
-            scheduledCol.setPrefWidth(120);
-            scheduledCol.setMinWidth(100);
-
-            TableColumn<TopicTableData, String> viewedCol = new TableColumn<>("Last Viewed");
-            viewedCol.setCellValueFactory(new PropertyValueFactory<>("viewedDate"));
-            viewedCol.setPrefWidth(120);
-            viewedCol.setMinWidth(100);
-
-            TableColumn<TopicTableData, Double> priorityCol = new TableColumn<>("Priority");
-            priorityCol.setCellValueFactory(new PropertyValueFactory<>("priority"));
-            priorityCol.setPrefWidth(70);
-            priorityCol.setMinWidth(60);
-
-            TableColumn<TopicTableData, Double> aFactorCol = new TableColumn<>("A-Factor");
-            aFactorCol.setCellValueFactory(new PropertyValueFactory<>("aFactor"));
-            aFactorCol.setPrefWidth(80);
-            aFactorCol.setMinWidth(60);
-
-            // Add columns to table
-            table.getColumns().addAll(idCol, typeCol, titleCol, sourceCol, addedCol, scheduledCol, viewedCol, priorityCol, aFactorCol);
-
-            // Add double-click functionality to open topics
-            table.setOnMouseClicked(event -> {
-                if (event.getClickCount() == 2) {
-                    TopicTableData selectedTopic = table.getSelectionModel().getSelectedItem();
-                    if (selectedTopic != null) {
-                        System.out.println("Opening topic ID: " + selectedTopic.getId());
-                        // Find and display the topic
-                        Topic topic = database.findTopic(selectedTopic.getId());
-                        if (topic != null) {
-                            currentTopic = topic;
-                            openTopicWindow();
-                        }
-                    }
-                }
-            });
-
-            // Update window title with count
-            stageTable.setTitle("All Topics (" + allTopics.size() + " items)");
-
-            // Create refresh button
-            Button refreshButton = new Button("🔄 Refresh");
-            refreshButton.getStyleClass().add("secondary-button");
-            refreshButton.setTooltip(new Tooltip("Refresh table data from database"));
-            refreshButton.setOnAction(refreshEvent -> {
-                // Reload data from database
-                List<TopicTableData> updatedTopics = database.getAllTopics();
-                ObservableList<TopicTableData> updatedData = FXCollections.observableArrayList(updatedTopics);
-                table.setItems(updatedData);
-                stageTable.setTitle("All Topics (" + updatedTopics.size() + " items)");
-                System.out.println("Table refreshed with " + updatedTopics.size() + " topics");
-            });
-
-            // Create header with title and refresh button
-            HBox headerBox = new HBox();
-            headerBox.setSpacing(10);
-            headerBox.setPadding(new Insets(0, 0, 10, 0));
-
-            Label tableTitle = new Label("Topics Database");
-            tableTitle.getStyleClass().add("section-title");
-
-            // Add spacer to push refresh button to the right
-            HBox spacer = new HBox();
-            HBox.setHgrow(spacer, Priority.ALWAYS);
-
-            headerBox.getChildren().addAll(tableTitle, spacer, refreshButton);
-
-            // Create layout
-            VBox vboxTable = new VBox();
-            vboxTable.setSpacing(10);
-            vboxTable.setPadding(new Insets(15));
-            vboxTable.getChildren().addAll(headerBox, table);
-
-            // Set up scene with larger dimensions for better viewing
-            Scene scene = new Scene(vboxTable, 1400, 800);
-            scene.getStylesheets().add(getClass().getResource("/styles.css").toExternalForm());
-            stageTable.setScene(scene);
-            stageTable.setMinWidth(1200);
-            stageTable.setMinHeight(600);
-
-            // Auto-refresh when window gains focus
-            stageTable.focusedProperty().addListener((obs, wasFocused, isFocused) -> {
-                if (isFocused) {
-                    List<TopicTableData> updatedTopics = database.getAllTopics();
-                    ObservableList<TopicTableData> updatedData = FXCollections.observableArrayList(updatedTopics);
-                    table.setItems(updatedData);
-                    stageTable.setTitle("All Topics (" + updatedTopics.size() + " items)");
-                }
-            });
-
-            stageTable.show();
-        });
-
-        btnNext.setOnAction(e -> {
-            // Initialize currentTopic if it's null
-            if (currentTopic == null) {
-                currentTopic = database.nextTopic();
-                if (currentTopic == null) {
-                    System.out.println("No topics available in the database.");
-                    return;
-                }
-            }
-            openTopicWindow();
-        });
-
-        btnTopicWithId.setOnAction(e -> {
-            String inputText = txtInput.getText().trim();
-            if (inputText.isEmpty()) {
-                txtInput.getStyleClass().add("error");
-                txtInput.setPromptText("Please enter a topic ID");
-                return;
-            }
-
-            try {
-                int topicId = Integer.parseInt(inputText);
-                currentTopic = database.findTopic(topicId);
-                if (currentTopic == null) {
-                    txtInput.getStyleClass().add("error");
-                    txtInput.setPromptText("Topic not found");
-                    txtInput.clear();
-                    return;
-                }
-            } catch (NumberFormatException ex) {
-                txtInput.getStyleClass().add("error");
-                txtInput.setPromptText("Please enter a valid number");
-                txtInput.clear();
-                return;
-            }
-
-            // Clear any error styling and open the topic
-            txtInput.getStyleClass().remove("error");
-            txtInput.clear();
-            openTopicWindow();
-        });
+        // Store the text field reference for the handleTopicWithId method
+        this.txtInput = txtInput;
 
         // Apply CSS styling and create scene
         Scene scene = new Scene(mainContainer, 1000, 800);
@@ -983,7 +698,7 @@ public class Incremental extends Application {
             if (pdfInfo == null) return;
 
             // Validate page bounds using ValidationUtils
-            if (!ValidationUtils.validatePageNumber(newPage, pdfInfo.getTotalPages(), "page jump")) {
+            if (!CoreUtils.validatePageNumber(newPage, pdfInfo.getTotalPages(), "page jump")) {
                 return;
             }
 
@@ -1432,9 +1147,269 @@ public class Incremental extends Application {
     }
 
     private String getFileNameFromPath(String path) {
-        return FileUtils.getFileNameFromPath(path);
+        return CoreUtils.getFileNameFromPath(path);
     }
 
+    /**
+     * Get an image off the system clipboard.
+     * 
+     * @return Returns an Image if successful; otherwise returns null.
+     */
+    private java.awt.Image getImageFromClipboard() {
+        System.out.println("Inside `getImageFromClipboard`.");
+
+        try {
+            Transferable tns = Toolkit.getDefaultToolkit().getSystemClipboard().getContents(null);
+
+            if (tns == null) {
+                System.out.println("Clipboard is empty.");
+                return null;
+            }
+
+            if (tns.isDataFlavorSupported(DataFlavor.imageFlavor)) {
+                return (java.awt.Image) tns.getTransferData(DataFlavor.imageFlavor);
+            } else {
+                System.out.println("No image flavor supported in clipboard.");
+                return null;
+            }
+
+        } catch (UnsupportedFlavorException | IOException e) {
+            System.err.println("Error accessing clipboard: " + e.getMessage());
+            e.printStackTrace();
+            return null;
+        } catch (IllegalStateException e) {
+            System.err.println("Clipboard unavailable: " + e.getMessage());
+            return null;
+        }
+    }
+
+    // Event handlers extracted from the UI building for cleaner separation
+    private void handleClipboardSave(ActionEvent event) {
+        Button btnClipboard = (Button) event.getSource();
+        // Save to DB
+        DatabaseService dbDatabase = new DatabaseService();
+        ButtonStateManager.showLoadingState(btnClipboard, "💾 Saving...");
+
+        BufferedImage bufferedImage;
+        java.awt.Image awtImage = getImageFromClipboard();
+
+        // Check if clipboard contains an image
+        if (awtImage == null) {
+            ButtonStateManager.showErrorState(btnClipboard, "❌ No image in clipboard", 3.0);
+            return;
+        }
+
+        // Convert to BufferedImage using ImageUtils
+        bufferedImage = ImageUtils.awtImageToBufferedImage(awtImage);
+        if (bufferedImage != null) {
+            System.out.println("Image conversion successful.");
+        } else {
+            ButtonStateManager.showErrorState(btnClipboard, "❌ Image conversion failed", 3.0);
+            return;
+        }
+        // Save the image using ImageUtils
+        InputStream imageStream = ImageUtils.bufferedImageToInputStream(bufferedImage);
+        int imageSize = ImageUtils.getBufferedImageByteSize(bufferedImage);
+
+        if (imageStream != null && imageSize > 0) {
+            dbDatabase.saveImage(imageStream, imageSize);
+            ButtonStateManager.showSuccessState(btnClipboard, "✅ Saved!", 2.0);
+        } else {
+            ButtonStateManager.showErrorState(btnClipboard, "❌ Save failed", 3.0);
+        }
+    }
+
+    private void handlePdfAdd(ActionEvent event) {
+        Button btnAddPDF = (Button) event.getSource();
+        Stage stage = (Stage) btnAddPDF.getScene().getWindow();
+        
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Select PDF File");
+        fileChooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("PDF Files", "*.pdf"));
+
+        File selectedFile = fileChooser.showOpenDialog(stage);
+        if (selectedFile != null) {
+            DatabaseService dbDatabase = new DatabaseService();
+            ButtonStateManager.showLoadingState(btnAddPDF, "📥 Loading...");
+
+            try {
+                dbDatabase.savePDF(selectedFile.getAbsolutePath());
+                ButtonStateManager.showSuccessState(btnAddPDF, "✅ PDF Loaded!", 2.0);
+
+            } catch (Exception e) {
+                ButtonStateManager.showErrorState(btnAddPDF, "❌ Load Failed", 2.0);
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void handleNext(ActionEvent event) {
+        // Initialize currentTopic if it's null
+        if (currentTopic == null) {
+            currentTopic = database.nextTopic();
+            if (currentTopic == null) {
+                System.out.println("No topics available in the database.");
+                return;
+            }
+        }
+        openTopicWindow();
+    }
+
+    private void handleTable(ActionEvent event) {
+        System.out.println("Opening topics table.");
+
+        // Create new stage for table
+        Stage stageTable = new Stage();
+        stageTable.setTitle("All Topics");
+
+        // Get all topics from database
+        List<TopicTableData> allTopics = database.getAllTopics();
+        ObservableList<TopicTableData> data = FXCollections.observableArrayList(allTopics);
+
+        // Create table with improved sizing
+        TableView<TopicTableData> table = new TableView<>();
+        table.setItems(data);
+        table.setEditable(false);
+        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+
+        // Create columns with better widths and more information
+        TableColumn<TopicTableData, Integer> idCol = new TableColumn<>("ID");
+        idCol.setCellValueFactory(new PropertyValueFactory<>("id"));
+        idCol.setPrefWidth(50);
+        idCol.setMinWidth(40);
+
+        TableColumn<TopicTableData, String> typeCol = new TableColumn<>("Type");
+        typeCol.setCellValueFactory(new PropertyValueFactory<>("type"));
+        typeCol.setPrefWidth(80);
+        typeCol.setMinWidth(60);
+
+        TableColumn<TopicTableData, String> titleCol = new TableColumn<>("Title");
+        titleCol.setCellValueFactory(new PropertyValueFactory<>("title"));
+        titleCol.setPrefWidth(200);
+        titleCol.setMinWidth(150);
+
+        TableColumn<TopicTableData, String> sourceCol = new TableColumn<>("Source");
+        sourceCol.setCellValueFactory(new PropertyValueFactory<>("source"));
+        sourceCol.setPrefWidth(160);
+        sourceCol.setMinWidth(120);
+
+        TableColumn<TopicTableData, String> addedCol = new TableColumn<>("Added");
+        addedCol.setCellValueFactory(new PropertyValueFactory<>("addedDate"));
+        addedCol.setPrefWidth(120);
+        addedCol.setMinWidth(100);
+
+        TableColumn<TopicTableData, String> scheduledCol = new TableColumn<>("Scheduled");
+        scheduledCol.setCellValueFactory(new PropertyValueFactory<>("scheduledDate"));
+        scheduledCol.setPrefWidth(120);
+        scheduledCol.setMinWidth(100);
+
+        TableColumn<TopicTableData, String> viewedCol = new TableColumn<>("Last Viewed");
+        viewedCol.setCellValueFactory(new PropertyValueFactory<>("viewedDate"));
+        viewedCol.setPrefWidth(120);
+        viewedCol.setMinWidth(100);
+
+        TableColumn<TopicTableData, Double> priorityCol = new TableColumn<>("Priority");
+        priorityCol.setCellValueFactory(new PropertyValueFactory<>("priority"));
+        priorityCol.setPrefWidth(70);
+        priorityCol.setMinWidth(60);
+
+        TableColumn<TopicTableData, Double> aFactorCol = new TableColumn<>("A-Factor");
+        aFactorCol.setCellValueFactory(new PropertyValueFactory<>("aFactor"));
+        aFactorCol.setPrefWidth(80);
+        aFactorCol.setMinWidth(60);
+
+        // Add columns to table
+        table.getColumns().addAll(idCol, typeCol, titleCol, sourceCol, addedCol, scheduledCol, viewedCol, priorityCol, aFactorCol);
+
+        // Add double-click functionality to open topics
+        table.setOnMouseClicked(event2 -> {
+            if (event2.getClickCount() == 2) {
+                TopicTableData selectedTopic = table.getSelectionModel().getSelectedItem();
+                if (selectedTopic != null) {
+                    System.out.println("Opening topic ID: " + selectedTopic.getId());
+                    // Find and display the topic
+                    Topic topic = database.findTopic(selectedTopic.getId());
+                    if (topic != null) {
+                        currentTopic = topic;
+                        openTopicWindow();
+                    }
+                }
+            }
+        });
+
+        // Update window title with count
+        stageTable.setTitle("All Topics (" + allTopics.size() + " items)");
+
+        // Create refresh button
+        Button refreshButton = UIComponentFactory.createButton("🔄 Refresh", "secondary-button", "Refresh table data from database");
+        refreshButton.setOnAction(refreshEvent -> {
+            // Reload data from database
+            List<TopicTableData> updatedTopics = database.getAllTopics();
+            ObservableList<TopicTableData> updatedData = FXCollections.observableArrayList(updatedTopics);
+            table.setItems(updatedData);
+            stageTable.setTitle("All Topics (" + updatedTopics.size() + " items)");
+            System.out.println("Table refreshed with " + updatedTopics.size() + " topics");
+        });
+
+        // Create header with title and refresh button
+        HBox headerBox = UIComponentFactory.createHeaderBox("Topics Database", refreshButton);
+
+        // Create layout
+        VBox vboxTable = new VBox();
+        vboxTable.setSpacing(10);
+        vboxTable.setPadding(new Insets(15));
+        vboxTable.getChildren().addAll(headerBox, table);
+
+        // Set up scene with larger dimensions for better viewing
+        Scene scene = new Scene(vboxTable, 1400, 800);
+        scene.getStylesheets().add(getClass().getResource("/styles.css").toExternalForm());
+        stageTable.setScene(scene);
+        stageTable.setMinWidth(1200);
+        stageTable.setMinHeight(600);
+
+        // Auto-refresh when window gains focus
+        stageTable.focusedProperty().addListener((obs, wasFocused, isFocused) -> {
+            if (isFocused) {
+                List<TopicTableData> updatedTopics = database.getAllTopics();
+                ObservableList<TopicTableData> updatedData = FXCollections.observableArrayList(updatedTopics);
+                table.setItems(updatedData);
+                stageTable.setTitle("All Topics (" + updatedTopics.size() + " items)");
+            }
+        });
+
+        stageTable.show();
+    }
+
+    private void handleTopicWithId(ActionEvent event) {
+        String inputText = txtInput.getText().trim();
+        if (inputText.isEmpty()) {
+            txtInput.getStyleClass().add("error");
+            txtInput.setPromptText("Please enter a topic ID");
+            return;
+        }
+
+        try {
+            int topicId = Integer.parseInt(inputText);
+            currentTopic = database.findTopic(topicId);
+            if (currentTopic == null) {
+                txtInput.getStyleClass().add("error");
+                txtInput.setPromptText("Topic not found");
+                txtInput.clear();
+                return;
+            }
+        } catch (NumberFormatException ex) {
+            txtInput.getStyleClass().add("error");
+            txtInput.setPromptText("Please enter a valid number");
+            txtInput.clear();
+            return;
+        }
+
+        // Clear any error styling and open the topic
+        txtInput.getStyleClass().remove("error");
+        txtInput.clear();
+        openTopicWindow();
+    }
 
     public static void main(String[] args) {
         launch();
