@@ -20,7 +20,7 @@ public class Database {
     String DB_PATH = "jdbc:sqlite:test.db";
 
     public void saveImage(InputStream input_stream, int image_length) {
-        String sql = "INSERT INTO images (img, added_at, scheduled_at, viewed_at, a_factor, priority) VALUES (?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 2.0, 0.5)";
+        String sql = "INSERT INTO images (img, kind, added_at, scheduled_at, viewed_at, a_factor, priority) VALUES (?, 'image', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 2.0, 0.5)";
 
         try {
             DatabaseUtils.executeUpdate(sql, pstmt -> {
@@ -147,16 +147,94 @@ public class Database {
     }
 
     public String getParentPdfPath(int parentTopicId) {
-        String sql = "SELECT pdf_path FROM images WHERE rowid = ?";
+        return findRootPdfPath(parentTopicId, 0);
+    }
+
+    /**
+     * Recursively find the root PDF path by traversing parent relationships
+     * Handles circular references and non-PDF parents
+     */
+    private String findRootPdfPath(int topicId, int depth) {
+        // Prevent infinite recursion (max depth 10)
+        if (depth > 10) {
+            System.err.println("Maximum depth reached while traversing parent chain for topic " + topicId);
+            return null;
+        }
+
+        String sql = "SELECT pdf_path, kind, parent_topic FROM images WHERE rowid = ?";
         try {
-            return DatabaseUtils.executeQuery(sql, pstmt -> pstmt.setInt(1, parentTopicId), rs -> {
+            return DatabaseUtils.executeQuery(sql, pstmt -> pstmt.setInt(1, topicId), rs -> {
                 if (rs.next()) {
-                    return rs.getString("pdf_path");
+                    String pdfPath = rs.getString("pdf_path");
+                    String kind = rs.getString("kind");
+                    int parentTopicId = rs.getInt("parent_topic");
+
+                    // If this topic has a PDF path, return it
+                    if (pdfPath != null && !pdfPath.trim().isEmpty()) {
+                        return pdfPath;
+                    }
+
+                    // If this is an extract with a parent, recurse to find the root PDF
+                    if ("extract".equals(kind) && parentTopicId > 0 && parentTopicId != topicId) {
+                        return findRootPdfPath(parentTopicId, depth + 1);
+                    }
+
+                    // If this is a non-extract with a parent, try parent
+                    if (parentTopicId > 0 && parentTopicId != topicId) {
+                        return findRootPdfPath(parentTopicId, depth + 1);
+                    }
+
+                    // No PDF path found
+                    return null;
                 }
                 return null;
             });
         } catch (SQLException e) {
             System.err.println("Error querying parent PDF path: " + e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Find the root PDF topic ID by traversing parent relationships
+     * Handles circular references and non-PDF parents
+     */
+    public Integer getRootPdfParentId(int parentTopicId) {
+        return findRootPdfParentId(parentTopicId, 0);
+    }
+
+    private Integer findRootPdfParentId(int topicId, int depth) {
+        // Prevent infinite recursion (max depth 10)
+        if (depth > 10) {
+            System.err.println("Maximum depth reached while traversing parent chain for topic " + topicId);
+            return null;
+        }
+
+        String sql = "SELECT pdf_path, kind, parent_topic FROM images WHERE rowid = ?";
+        try {
+            return DatabaseUtils.executeQuery(sql, pstmt -> pstmt.setInt(1, topicId), rs -> {
+                if (rs.next()) {
+                    String pdfPath = rs.getString("pdf_path");
+                    String kind = rs.getString("kind");
+                    int parentTopicId = rs.getInt("parent_topic");
+
+                    // If this topic has a PDF path, return its ID
+                    if (pdfPath != null && !pdfPath.trim().isEmpty()) {
+                        return topicId;
+                    }
+
+                    // If this is an extract with a parent, recurse to find the root PDF
+                    if ("extract".equals(kind) && parentTopicId > 0 && parentTopicId != topicId) {
+                        return findRootPdfParentId(parentTopicId, depth + 1);
+                    }
+
+                    // No PDF parent found
+                    return null;
+                }
+                return null;
+            });
+        } catch (SQLException e) {
+            System.err.println("Error querying root PDF parent ID: " + e.getMessage());
             return null;
         }
     }
@@ -182,7 +260,7 @@ public class Database {
     }
 
     public void savePDF(String pdfPath) {
-        String sql = "INSERT INTO images (pdf_path, current_page, added_at, scheduled_at, viewed_at, a_factor, priority) VALUES (?, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 2.0, 0.5)";
+        String sql = "INSERT INTO images (pdf_path, kind, current_page, added_at, scheduled_at, viewed_at, a_factor, priority) VALUES (?, 'pdf', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 2.0, 0.5)";
 
         try {
             DatabaseUtils.executeUpdate(sql, pstmt -> {
@@ -213,22 +291,25 @@ public class Database {
     }
 
     public List<TopicTableData> getAllTopics() {
-        String sql = "SELECT rowid, added_at, scheduled_at, a_factor, priority, title, pdf_path FROM images ORDER BY rowid DESC";
+        String sql = "SELECT rowid, added_at, scheduled_at, viewed_at, a_factor, priority, title, pdf_path, kind, current_page, pdf_page, parent_topic FROM images ORDER BY rowid DESC";
 
         try {
             return DatabaseUtils.executeQueryList(sql, null, rs -> {
                 int id = rs.getInt("rowid");
                 String addedDate = rs.getString("added_at");
                 String scheduledDate = rs.getString("scheduled_at");
+                String viewedDate = rs.getString("viewed_at");
                 double aFactor = rs.getDouble("a_factor");
                 double priority = rs.getDouble("priority");
                 String title = rs.getString("title");
                 String pdfPath = rs.getString("pdf_path");
+                String kind = rs.getString("kind");
+                int currentPage = rs.getInt("current_page");
+                int pdfPage = rs.getInt("pdf_page");
+                int parentTopic = rs.getInt("parent_topic");
 
-                // Determine type
-                String type = (pdfPath != null && !pdfPath.trim().isEmpty()) ? "PDF" : "Image";
-
-                return new TopicTableData(id, type, title, addedDate, scheduledDate, priority, aFactor);
+                return new TopicTableData(id, addedDate, scheduledDate, viewedDate, aFactor, priority, title, pdfPath,
+                        kind, currentPage, pdfPage, parentTopic);
             });
 
         } catch (SQLException e) {
