@@ -61,7 +61,7 @@ public class PDFImageRenderer {
     public static BufferedImage renderPageToImage(PDFInfo pdfInfo, int pageNumber, float dpi) {
         return ErrorHandler.handlePdfError("rendering page to image", () -> {
             // Convert from 1-based to 0-based page indexing using ValidationUtils
-            int zeroBasedPage = ValidationUtils.convertToZeroBasedPage(pageNumber, pdfInfo.getTotalPages());
+            int zeroBasedPage = CoreUtils.convertToZeroBasedPage(pageNumber, pdfInfo.getTotalPages());
             
             if (zeroBasedPage == -1) {
                 System.err.println("Page number out of range: " + pageNumber);
@@ -104,7 +104,7 @@ public class PDFImageRenderer {
             int pageWidth = fullPage.getWidth();
             int pageHeight = fullPage.getHeight();
             
-            ValidationUtils.RectangleBounds bounds = ValidationUtils.calculateImageBounds(
+            CoreUtils.RectangleBounds bounds = CoreUtils.calculateImageBounds(
                 x1, y1, x2, y2, pageWidth, pageHeight);
 
             // Extract the rectangle if bounds are valid
