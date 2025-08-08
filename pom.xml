@@ -64,6 +64,8 @@
               <options>
                 <option>-Djavafx.macosx.embedded=true</option>
                 <option>-Dprism.order=sw</option>
+                <option>--enable-native-access=javafx.graphics</option>
+                <option>--add-opens=java.base/sun.misc=ALL-UNNAMED</option>
               </options>
             </configuration>
           </execution>
