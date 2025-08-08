@@ -497,6 +497,7 @@ public class Incremental extends Application {
         currentButtonBox.setPadding(new Insets(8));
 
         currentRichTextArea = new RichTextArea();
+        currentRichTextArea.setWrapText(true);
 
         // Setup auto-save functionality
         setupAutoSave();
