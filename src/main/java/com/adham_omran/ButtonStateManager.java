@@ -102,33 +102,4 @@ public class ButtonStateManager {
         resetTimer.play();
     }
     
-    /**
-     * Complete workflow: Loading -> Success with auto-reset
-     */
-    public static void showLoadingThenSuccess(Button button, String loadingText, String successText, double successDelaySeconds) {
-        showLoadingState(button, loadingText);
-        // Note: The calling code should call showSuccessState when the operation completes
-    }
-    
-    /**
-     * Complete workflow: Loading -> Error with auto-reset
-     */
-    public static void showLoadingThenError(Button button, String loadingText, String errorText, double errorDelaySeconds) {
-        showLoadingState(button, loadingText);
-        // Note: The calling code should call showErrorState when the operation fails
-    }
-    
-    /**
-     * Clear the stored original state (useful for cleanup)
-     */
-    public static void clearOriginalState(Button button) {
-        originalStates.remove(button);
-    }
-    
-    /**
-     * Clear all stored states (useful for cleanup)
-     */
-    public static void clearAllStates() {
-        originalStates.clear();
-    }
 }

@@ -17,16 +17,6 @@ public class FileUtils {
     }
     
     /**
-     * Extract filename from a file path using File.separator for cross-platform compatibility
-     */
-    public static String getFileNameFromPathCrossPlatform(String path) {
-        if (path == null || path.isEmpty()) {
-            return "Unknown file";
-        }
-        return path.substring(path.lastIndexOf(File.separator) + 1);
-    }
-    
-    /**
      * Extract filename using Path API (preferred method)
      */
     public static String getFileName(String path) {

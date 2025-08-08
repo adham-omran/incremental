@@ -33,16 +33,6 @@ public class ImageUtils {
     }
     
     /**
-     * Convert BufferedImage to JavaFX Image using SwingFXUtils (faster method)
-     */
-    public static Image bufferedImageToFXImageFast(BufferedImage bufferedImage) {
-        if (bufferedImage == null) {
-            return null;
-        }
-        return SwingFXUtils.toFXImage(bufferedImage, null);
-    }
-    
-    /**
      * Convert any AWT Image to BufferedImage
      */
     public static BufferedImage awtImageToBufferedImage(java.awt.Image awtImage) {
@@ -111,14 +101,4 @@ public class ImageUtils {
         return getBufferedImageByteSize(bufferedImage, "png");
     }
     
-    /**
-     * Complete conversion workflow: AWT Image -> BufferedImage -> JavaFX Image
-     */
-    public static Image awtImageToFXImage(java.awt.Image awtImage) {
-        BufferedImage bufferedImage = awtImageToBufferedImage(awtImage);
-        if (bufferedImage != null) {
-            return bufferedImageToFXImageFast(bufferedImage);
-        }
-        return null;
-    }
 }
