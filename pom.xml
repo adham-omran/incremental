@@ -39,6 +39,13 @@
       <version>25-ea+24</version>
     </dependency>
 
+    <!-- Logging framework for suppressing PDFBox warnings -->
+    <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+      <version>1.4.14</version>
+    </dependency>
+
   </dependencies>
   <build>
     <plugins>
