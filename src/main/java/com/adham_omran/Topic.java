@@ -133,9 +133,6 @@ public class Topic {
     }
 
     public void setCurrentPage(int currentPage) {
-        if (currentPage < 1) {
-            throw new IllegalArgumentException("Page number must be at least 1");
-        }
         this.currentPage = currentPage;
     }
 
