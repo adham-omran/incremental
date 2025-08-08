@@ -148,22 +148,4 @@ public class Topic {
         this.pdfPage = pdfPage;
     }
 
-    /* Methods */
-
-    /**
-     * <p>
-     * Calculate the next interval.
-     * </p>
-     *
-     * @param
-     * @return The next interval in days.
-     * @see <a href=""></a>
-     * @since 0.0.1
-     */
-    public double calculateNextInterval() {
-        return 0.0;
-    }
-
-    public void setNextReview() {
-    }
 }
