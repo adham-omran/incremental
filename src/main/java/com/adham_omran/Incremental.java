@@ -216,42 +216,60 @@ public class Incremental extends Application {
             List<TopicTableData> allTopics = database.getAllTopics();
             ObservableList<TopicTableData> data = FXCollections.observableArrayList(allTopics);
 
-            // Create table
+            // Create table with improved sizing
             TableView<TopicTableData> table = new TableView<>();
             table.setItems(data);
             table.setEditable(false);
+            table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
-            // Create columns
+            // Create columns with better widths and more information
             TableColumn<TopicTableData, Integer> idCol = new TableColumn<>("ID");
             idCol.setCellValueFactory(new PropertyValueFactory<>("id"));
-            idCol.setPrefWidth(60);
+            idCol.setPrefWidth(50);
+            idCol.setMinWidth(40);
 
             TableColumn<TopicTableData, String> typeCol = new TableColumn<>("Type");
             typeCol.setCellValueFactory(new PropertyValueFactory<>("type"));
-            typeCol.setPrefWidth(70);
+            typeCol.setPrefWidth(80);
+            typeCol.setMinWidth(60);
 
             TableColumn<TopicTableData, String> titleCol = new TableColumn<>("Title");
             titleCol.setCellValueFactory(new PropertyValueFactory<>("title"));
-            titleCol.setPrefWidth(250);
+            titleCol.setPrefWidth(200);
+            titleCol.setMinWidth(150);
+
+            TableColumn<TopicTableData, String> sourceCol = new TableColumn<>("Source");
+            sourceCol.setCellValueFactory(new PropertyValueFactory<>("source"));
+            sourceCol.setPrefWidth(160);
+            sourceCol.setMinWidth(120);
 
             TableColumn<TopicTableData, String> addedCol = new TableColumn<>("Added");
             addedCol.setCellValueFactory(new PropertyValueFactory<>("addedDate"));
             addedCol.setPrefWidth(120);
+            addedCol.setMinWidth(100);
 
             TableColumn<TopicTableData, String> scheduledCol = new TableColumn<>("Scheduled");
             scheduledCol.setCellValueFactory(new PropertyValueFactory<>("scheduledDate"));
             scheduledCol.setPrefWidth(120);
+            scheduledCol.setMinWidth(100);
+
+            TableColumn<TopicTableData, String> viewedCol = new TableColumn<>("Last Viewed");
+            viewedCol.setCellValueFactory(new PropertyValueFactory<>("viewedDate"));
+            viewedCol.setPrefWidth(120);
+            viewedCol.setMinWidth(100);
 
             TableColumn<TopicTableData, Double> priorityCol = new TableColumn<>("Priority");
             priorityCol.setCellValueFactory(new PropertyValueFactory<>("priority"));
-            priorityCol.setPrefWidth(80);
+            priorityCol.setPrefWidth(70);
+            priorityCol.setMinWidth(60);
 
             TableColumn<TopicTableData, Double> aFactorCol = new TableColumn<>("A-Factor");
             aFactorCol.setCellValueFactory(new PropertyValueFactory<>("aFactor"));
             aFactorCol.setPrefWidth(80);
+            aFactorCol.setMinWidth(60);
 
             // Add columns to table
-            table.getColumns().addAll(idCol, typeCol, titleCol, addedCol, scheduledCol, priorityCol, aFactorCol);
+            table.getColumns().addAll(idCol, typeCol, titleCol, sourceCol, addedCol, scheduledCol, viewedCol, priorityCol, aFactorCol);
 
             // Add double-click functionality to open topics
             table.setOnMouseClicked(event -> {
@@ -272,16 +290,56 @@ public class Incremental extends Application {
             // Update window title with count
             stageTable.setTitle("All Topics (" + allTopics.size() + " items)");
 
+            // Create refresh button
+            Button refreshButton = new Button("🔄 Refresh");
+            refreshButton.getStyleClass().add("secondary-button");
+            refreshButton.setTooltip(new Tooltip("Refresh table data from database"));
+            refreshButton.setOnAction(refreshEvent -> {
+                // Reload data from database
+                List<TopicTableData> updatedTopics = database.getAllTopics();
+                ObservableList<TopicTableData> updatedData = FXCollections.observableArrayList(updatedTopics);
+                table.setItems(updatedData);
+                stageTable.setTitle("All Topics (" + updatedTopics.size() + " items)");
+                System.out.println("Table refreshed with " + updatedTopics.size() + " topics");
+            });
+
+            // Create header with title and refresh button
+            HBox headerBox = new HBox();
+            headerBox.setSpacing(10);
+            headerBox.setPadding(new Insets(0, 0, 10, 0));
+
+            Label tableTitle = new Label("Topics Database");
+            tableTitle.getStyleClass().add("section-title");
+
+            // Add spacer to push refresh button to the right
+            HBox spacer = new HBox();
+            HBox.setHgrow(spacer, Priority.ALWAYS);
+
+            headerBox.getChildren().addAll(tableTitle, spacer, refreshButton);
+
             // Create layout
             VBox vboxTable = new VBox();
-            vboxTable.setSpacing(5);
-            vboxTable.setPadding(new Insets(10));
-            vboxTable.getChildren().add(table);
+            vboxTable.setSpacing(10);
+            vboxTable.setPadding(new Insets(15));
+            vboxTable.getChildren().addAll(headerBox, table);
 
-            // Set up scene and show
-            Scene scene = new Scene(vboxTable, 800, 600);
+            // Set up scene with larger dimensions for better viewing
+            Scene scene = new Scene(vboxTable, 1400, 800);
             scene.getStylesheets().add(getClass().getResource("/styles.css").toExternalForm());
             stageTable.setScene(scene);
+            stageTable.setMinWidth(1200);
+            stageTable.setMinHeight(600);
+
+            // Auto-refresh when window gains focus
+            stageTable.focusedProperty().addListener((obs, wasFocused, isFocused) -> {
+                if (isFocused) {
+                    List<TopicTableData> updatedTopics = database.getAllTopics();
+                    ObservableList<TopicTableData> updatedData = FXCollections.observableArrayList(updatedTopics);
+                    table.setItems(updatedData);
+                    stageTable.setTitle("All Topics (" + updatedTopics.size() + " items)");
+                }
+            });
+
             stageTable.show();
         });
 
@@ -654,25 +712,31 @@ public class Incremental extends Application {
         }
 
         try {
-            Topic parentTopic = database.findTopic(currentTopic.getTopicParent());
-            if (parentTopic != null) {
-                // Save current content before switching
-                if (saveTimer != null) {
-                    saveTimer.stop();
+            // Find the root PDF parent topic (handles extract chains)
+            Integer rootPdfParentId = database.getRootPdfParentId(currentTopic.getTopicParent());
+            if (rootPdfParentId != null) {
+                Topic parentTopic = database.findTopic(rootPdfParentId);
+                if (parentTopic != null) {
+                    // Save current content before switching
+                    if (saveTimer != null) {
+                        saveTimer.stop();
+                    }
+                    if (currentTopic != null && currentRichTextArea != null) {
+                        database.updateContent(currentTopic.getRowId(), currentRichTextArea);
+                    }
+
+                    // Switch to parent topic
+                    currentTopic = parentTopic;
+
+                    // Update the UI to show the parent PDF
+                    openTopicWindow();
+
+                    System.out.println("Opened source PDF for root parent topic: " + parentTopic.getRowId());
+                } else {
+                    System.err.println("Root PDF parent topic not found: " + rootPdfParentId);
                 }
-                if (currentTopic != null && currentRichTextArea != null) {
-                    database.updateContent(currentTopic.getRowId(), currentRichTextArea);
-                }
-
-                // Switch to parent topic
-                currentTopic = parentTopic;
-
-                // Update the UI to show the parent PDF
-                openTopicWindow();
-
-                System.out.println("Opened source PDF for parent topic: " + parentTopic.getRowId());
             } else {
-                System.err.println("Parent topic not found: " + currentTopic.getTopicParent());
+                System.err.println("No root PDF parent found for topic: " + currentTopic.getRowId());
             }
         } catch (Exception ex) {
             System.err.println("Error opening source PDF: " + ex.getMessage());
@@ -687,12 +751,18 @@ public class Incremental extends Application {
         }
 
         try {
-            Topic parentTopic = database.findTopic(currentTopic.getTopicParent());
-            if (parentTopic != null && parentTopic.isPdf()) {
-                openLightweightPdfViewer(parentTopic);
-                System.out.println("Opened lightweight PDF viewer for parent topic: " + parentTopic.getRowId());
+            // Find the root PDF parent topic (handles extract chains)
+            Integer rootPdfParentId = database.getRootPdfParentId(currentTopic.getTopicParent());
+            if (rootPdfParentId != null) {
+                Topic parentTopic = database.findTopic(rootPdfParentId);
+                if (parentTopic != null && parentTopic.isPdf()) {
+                    openLightweightPdfViewer(parentTopic);
+                    System.out.println("Opened lightweight PDF viewer for root parent topic: " + parentTopic.getRowId());
+                } else {
+                    System.err.println("Root PDF parent topic not found or not a PDF: " + rootPdfParentId);
+                }
             } else {
-                System.err.println("Parent topic not found or not a PDF: " + currentTopic.getTopicParent());
+                System.err.println("No root PDF parent found for topic: " + currentTopic.getRowId());
             }
         } catch (Exception ex) {
             System.err.println("Error opening PDF viewer: " + ex.getMessage());
@@ -1364,9 +1434,6 @@ public class Incremental extends Application {
         return FileUtils.getFileNameFromPath(path);
     }
 
-    public static Image bufferedImageToFXImage(BufferedImage bufferedImage) {
-        return ImageUtils.bufferedImageToFXImage(bufferedImage);
-    }
 
     public static void main(String[] args) {
         launch();
