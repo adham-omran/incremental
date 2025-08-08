@@ -44,7 +44,7 @@ public class PDFImageRenderer {
 
         return new PDFInfo(document, renderer, totalPages);
     }
-    
+
     /**
      * Load PDF with error handling (returns null on error)
      */
@@ -62,7 +62,7 @@ public class PDFImageRenderer {
         return ErrorHandler.handlePdfError("rendering page to image", () -> {
             // Convert from 1-based to 0-based page indexing using ValidationUtils
             int zeroBasedPage = CoreUtils.convertToZeroBasedPage(pageNumber, pdfInfo.getTotalPages());
-            
+
             if (zeroBasedPage == -1) {
                 System.err.println("Page number out of range: " + pageNumber);
                 return null;
@@ -103,9 +103,9 @@ public class PDFImageRenderer {
             // Calculate rectangle bounds using ValidationUtils
             int pageWidth = fullPage.getWidth();
             int pageHeight = fullPage.getHeight();
-            
+
             CoreUtils.RectangleBounds bounds = CoreUtils.calculateImageBounds(
-                x1, y1, x2, y2, pageWidth, pageHeight);
+                    x1, y1, x2, y2, pageWidth, pageHeight);
 
             // Extract the rectangle if bounds are valid
             if (bounds.isValid()) {

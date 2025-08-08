@@ -88,7 +88,7 @@ public class Incremental extends Application {
 
         // Build UI sections using factory methods
         VBox contentSection = UIBuilder.buildContentActionsSection(this::handleClipboardSave, this::handlePdfAdd);
-        VBox navigationSection = UIBuilder.buildNavigationSection(this::handleNext, this::handleTable);  
+        VBox navigationSection = UIBuilder.buildNavigationSection(this::handleNext, this::handleTable);
         VBox accessSection = UIBuilder.buildDirectAccessSection(txtInput, this::handleTopicWithId);
 
         // Add Enter key support for the ID field
@@ -274,7 +274,8 @@ public class Incremental extends Application {
             // Render PDF page
             try {
                 PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDFSafe(topic.getPdfPath());
-                if (pdfInfo == null) return;
+                if (pdfInfo == null)
+                    return;
                 img = PDFImageRenderer.renderPageToFXImage(pdfInfo, topic.getCurrentPage());
                 System.out.println("Rendered PDF page " + topic.getCurrentPage());
             } catch (Exception ex) {
@@ -317,7 +318,8 @@ public class Incremental extends Application {
         if (topic.isPdf() && pageNumberField != null) {
             try {
                 PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDFSafe(topic.getPdfPath());
-                if (pdfInfo == null) return;
+                if (pdfInfo == null)
+                    return;
                 pageNumberField.setText(String.valueOf(topic.getCurrentPage()));
                 if (totalPagesLabel != null) {
                     totalPagesLabel.setText("of " + pdfInfo.getTotalPages());
@@ -339,7 +341,7 @@ public class Incremental extends Application {
         btnNextPage.getStyleClass().add(isCompact ? "compact-secondary-button" : "secondary-button");
 
         // Return array: [prevButton, nextButton]
-        return new Button[]{btnPrevPage, btnNextPage};
+        return new Button[] { btnPrevPage, btnNextPage };
     }
 
     private VBox createZoomControls() {
@@ -473,7 +475,8 @@ public class Incremental extends Application {
                 Topic parentTopic = database.findTopic(rootPdfParentId);
                 if (parentTopic != null && parentTopic.isPdf()) {
                     openLightweightPdfViewer(parentTopic);
-                    System.out.println("Opened lightweight PDF viewer for root parent topic: " + parentTopic.getRowId());
+                    System.out
+                            .println("Opened lightweight PDF viewer for root parent topic: " + parentTopic.getRowId());
                 } else {
                     System.err.println("Root PDF parent topic not found or not a PDF: " + rootPdfParentId);
                 }
@@ -497,7 +500,8 @@ public class Incremental extends Application {
         Image pdfImg = null;
         try {
             PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDFSafe(pdfTopic.getPdfPath());
-            if (pdfInfo == null) return;
+            if (pdfInfo == null)
+                return;
             pdfImg = PDFImageRenderer.renderPageToFXImage(pdfInfo, pdfTopic.getCurrentPage());
             System.out.println("Rendered PDF page " + pdfTopic.getCurrentPage() + " in viewer");
         } catch (Exception ex) {
@@ -557,7 +561,8 @@ public class Incremental extends Application {
     private void updatePdfViewer(ImageView imageView, Topic pdfTopic, Label pageLabel) {
         try {
             PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDFSafe(pdfTopic.getPdfPath());
-            if (pdfInfo == null) return;
+            if (pdfInfo == null)
+                return;
             Image img = PDFImageRenderer.renderPageToFXImage(pdfInfo, pdfTopic.getCurrentPage());
             imageView.setImage(img);
             pageLabel.setText("Page " + pdfTopic.getCurrentPage());
@@ -591,7 +596,8 @@ public class Incremental extends Application {
         try {
             // Get PDF info for total pages
             PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDFSafe(currentTopic.getPdfPath());
-            if (pdfInfo == null) return;
+            if (pdfInfo == null)
+                return;
             int totalPages = pdfInfo.getTotalPages();
 
             // Create navigation section
@@ -695,7 +701,8 @@ public class Incremental extends Application {
     private void navigateToPage(int newPage) {
         try {
             PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDFSafe(currentTopic.getPdfPath());
-            if (pdfInfo == null) return;
+            if (pdfInfo == null)
+                return;
 
             // Validate page bounds using ValidationUtils
             if (!CoreUtils.validatePageNumber(newPage, pdfInfo.getTotalPages(), "page jump")) {
@@ -739,7 +746,8 @@ public class Incremental extends Application {
 
             int targetPage = Integer.parseInt(pageText);
             PDFImageRenderer.PDFInfo pdfInfo = PDFImageRenderer.loadPDFSafe(currentTopic.getPdfPath());
-            if (pdfInfo == null) return;
+            if (pdfInfo == null)
+                return;
 
             if (targetPage < 1 || targetPage > pdfInfo.getTotalPages()) {
                 pageNumberField.getStyleClass().add("error");
@@ -1152,7 +1160,7 @@ public class Incremental extends Application {
 
     /**
      * Get an image off the system clipboard.
-     * 
+     *
      * @return Returns an Image if successful; otherwise returns null.
      */
     private java.awt.Image getImageFromClipboard() {
@@ -1222,7 +1230,7 @@ public class Incremental extends Application {
     private void handlePdfAdd(ActionEvent event) {
         Button btnAddPDF = (Button) event.getSource();
         Stage stage = (Stage) btnAddPDF.getScene().getWindow();
-        
+
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Select PDF File");
         fileChooser.getExtensionFilters().add(
@@ -1320,7 +1328,8 @@ public class Incremental extends Application {
         aFactorCol.setMinWidth(60);
 
         // Add columns to table
-        table.getColumns().addAll(idCol, typeCol, titleCol, sourceCol, addedCol, scheduledCol, viewedCol, priorityCol, aFactorCol);
+        table.getColumns().addAll(idCol, typeCol, titleCol, sourceCol, addedCol, scheduledCol, viewedCol, priorityCol,
+                aFactorCol);
 
         // Add double-click functionality to open topics
         table.setOnMouseClicked(event2 -> {
@@ -1342,7 +1351,8 @@ public class Incremental extends Application {
         stageTable.setTitle("All Topics (" + allTopics.size() + " items)");
 
         // Create refresh button
-        Button refreshButton = UIComponentFactory.createButton("🔄 Refresh", "secondary-button", "Refresh table data from database");
+        Button refreshButton = UIComponentFactory.createButton("🔄 Refresh", "secondary-button",
+                Refresh table data from database");
         refreshButton.setOnAction(refreshEvent -> {
             // Reload data from database
             List<TopicTableData> updatedTopics = database.getAllTopics();

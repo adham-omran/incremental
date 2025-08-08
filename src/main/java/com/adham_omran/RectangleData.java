@@ -83,7 +83,7 @@ public class RectangleData {
 
     @Override
     public String toString() {
-        return String.format("Rectangle[item=%d, page=%d, (%.3f,%.3f)-(%.3f,%.3f)]", 
-                           itemId, pdfPage, x1, y1, x2, y2);
+        return String.format("Rectangle[item=%d, page=%d, (%.3f,%.3f)-(%.3f,%.3f)]",
+                itemId, pdfPage, x1, y1, x2, y2);
     }
 }

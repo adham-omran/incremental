@@ -15,7 +15,8 @@ import javafx.scene.image.Image;
 import jfx.incubator.scene.control.richtext.RichTextArea;
 
 /**
- * Consolidated database service that combines Database and DatabaseUtils functionality
+ * Consolidated database service that combines Database and DatabaseUtils
+ * functionality
  */
 public class DatabaseService {
     private static final String DB_PATH = "jdbc:sqlite:test.db";
@@ -44,9 +45,10 @@ public class DatabaseService {
     }
 
     // Query execution methods
-    public <T> T executeQuery(String sql, PreparedStatementConsumer paramSetter, ResultSetHandler<T> handler) throws SQLException {
+    public <T> T executeQuery(String sql, PreparedStatementConsumer paramSetter, ResultSetHandler<T> handler)
+            throws SQLException {
         try (Connection connection = DriverManager.getConnection(DB_PATH);
-             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+                PreparedStatement pstmt = connection.prepareStatement(sql)) {
 
             if (paramSetter != null) {
                 paramSetter.accept(pstmt);
@@ -58,7 +60,8 @@ public class DatabaseService {
         }
     }
 
-    public <T> List<T> executeQueryList(String sql, PreparedStatementConsumer paramSetter, ResultSetHandler<T> handler) throws SQLException {
+    public <T> List<T> executeQueryList(String sql, PreparedStatementConsumer paramSetter, ResultSetHandler<T> handler)
+            throws SQLException {
         List<T> results = new ArrayList<>();
         executeQuery(sql, paramSetter, rs -> {
             while (rs.next()) {
@@ -71,7 +74,7 @@ public class DatabaseService {
 
     public int executeUpdate(String sql, PreparedStatementConsumer paramSetter) throws SQLException {
         try (Connection connection = DriverManager.getConnection(DB_PATH);
-             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+                PreparedStatement pstmt = connection.prepareStatement(sql)) {
 
             if (paramSetter != null) {
                 paramSetter.accept(pstmt);

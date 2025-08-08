@@ -3,7 +3,7 @@ package com.adham_omran;
 import java.util.function.Supplier;
 
 public class ErrorHandler {
-    
+
     /**
      * Execute a supplier operation with standard error handling
      * Returns null if operation fails
@@ -16,7 +16,7 @@ public class ErrorHandler {
             return null;
         }
     }
-    
+
     /**
      * Execute a supplier operation with custom error handling
      * Returns defaultValue if operation fails
@@ -29,7 +29,7 @@ public class ErrorHandler {
             return defaultValue;
         }
     }
-    
+
     /**
      * Execute a runnable operation with standard error handling
      * Returns true if successful, false if failed
@@ -43,7 +43,7 @@ public class ErrorHandler {
             return false;
         }
     }
-    
+
     /**
      * Log an error with consistent format
      */
@@ -51,7 +51,7 @@ public class ErrorHandler {
         System.err.println("Error " + operation + ": " + e.getMessage());
         e.printStackTrace();
     }
-    
+
     /**
      * Log an error with custom message and exception
      */
@@ -61,35 +61,35 @@ public class ErrorHandler {
             e.printStackTrace();
         }
     }
-    
+
     /**
      * Handle PDF operation errors specifically
      */
     public static <T> T handlePdfError(String operation, Supplier<T> supplier) {
         return executeWithErrorHandling("in PDF operation (" + operation + ")", supplier);
     }
-    
+
     /**
      * Handle database operation errors specifically
      */
     public static <T> T handleDatabaseError(String operation, Supplier<T> supplier) {
         return executeWithErrorHandling("in database operation (" + operation + ")", supplier);
     }
-    
+
     /**
      * Handle image processing errors specifically
      */
     public static <T> T handleImageError(String operation, Supplier<T> supplier) {
         return executeWithErrorHandling("in image processing (" + operation + ")", supplier);
     }
-    
+
     /**
      * Handle file operation errors specifically
      */
     public static <T> T handleFileError(String operation, Supplier<T> supplier) {
         return executeWithErrorHandling("in file operation (" + operation + ")", supplier);
     }
-    
+
     /**
      * Handle UI operation errors specifically
      */

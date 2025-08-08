@@ -8,20 +8,20 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ButtonStateManager {
-    
+
     // Store original button states to restore later
     private static final Map<Button, ButtonOriginalState> originalStates = new HashMap<>();
-    
+
     private static class ButtonOriginalState {
         final String originalText;
         final String originalStyleClass;
-        
+
         ButtonOriginalState(String text, String styleClass) {
             this.originalText = text;
             this.originalStyleClass = styleClass;
         }
     }
-    
+
     /**
      * Store the original state of a button for later restoration
      */
@@ -29,29 +29,29 @@ public class ButtonStateManager {
         if (!originalStates.containsKey(button)) {
             // Get the primary CSS class (first non-default class)
             String primaryClass = button.getStyleClass().stream()
-                .filter(cls -> !cls.equals("button"))  // Skip default JavaFX button class
-                .findFirst()
-                .orElse("button");
-            
+                    .filter(cls -> !cls.equals("button")) // Skip default JavaFX button class
+                    .findFirst()
+                    .orElse("button");
+
             originalStates.put(button, new ButtonOriginalState(button.getText(), primaryClass));
         }
     }
-    
+
     /**
      * Set button state with text and CSS class
      */
     public static void setState(Button button, String text, String cssClass) {
         storeOriginalState(button);
-        
+
         button.setText(text);
-        
+
         // Remove all existing style classes except 'button'
         button.getStyleClass().removeIf(cls -> !cls.equals("button"));
         button.getStyleClass().add(cssClass);
-        
+
         button.setDisable(false); // Ensure button is enabled unless specifically disabled
     }
-    
+
     /**
      * Create a timer that resets the button to its original state after a delay
      */
@@ -60,7 +60,7 @@ public class ButtonStateManager {
             resetToOriginal(button);
         }));
     }
-    
+
     /**
      * Reset button to its original stored state
      */
@@ -73,7 +73,7 @@ public class ButtonStateManager {
             button.setDisable(false);
         }
     }
-    
+
     /**
      * Show loading state with custom text
      */
@@ -81,25 +81,25 @@ public class ButtonStateManager {
         setState(button, loadingText, "loading-button");
         button.setDisable(true);
     }
-    
+
     /**
      * Show success state and auto-reset after delay
      */
     public static void showSuccessState(Button button, String successText, double resetDelaySeconds) {
         setState(button, successText, "success-button");
-        
+
         Timeline resetTimer = createResetTimer(button, resetDelaySeconds);
         resetTimer.play();
     }
-    
+
     /**
      * Show error state and auto-reset after delay
      */
     public static void showErrorState(Button button, String errorText, double resetDelaySeconds) {
         setState(button, errorText, "error-button");
-        
+
         Timeline resetTimer = createResetTimer(button, resetDelaySeconds);
         resetTimer.play();
     }
-    
+
 }

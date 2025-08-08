@@ -13,10 +13,11 @@ import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 
 /**
- * Factory for creating common UI components with consistent styling and behavior
+ * Factory for creating common UI components with consistent styling and
+ * behavior
  */
 public class UIComponentFactory {
-    
+
     /**
      * Create a button with text, style class, and tooltip
      */
@@ -30,55 +31,56 @@ public class UIComponentFactory {
         }
         return button;
     }
-    
+
     /**
      * Create a button with text, style class, tooltip, and action handler
      */
-    public static Button createButton(String text, String styleClass, String tooltipText, EventHandler<ActionEvent> handler) {
+    public static Button createButton(String text, String styleClass, String tooltipText,
+            EventHandler<ActionEvent> handler) {
         Button button = createButton(text, styleClass, tooltipText);
         if (handler != null) {
             button.setOnAction(handler);
         }
         return button;
     }
-    
+
     /**
      * Create a simple button with just text and style
      */
     public static Button createButton(String text, String styleClass) {
         return createButton(text, styleClass, null);
     }
-    
+
     /**
      * Create a section container with title and content
      */
     public static VBox createSection(String title, String sectionStyle, String titleStyle) {
         VBox section = new VBox();
         section.getStyleClass().add(sectionStyle != null ? sectionStyle : "section-container");
-        
+
         if (title != null && !title.isEmpty()) {
             Label titleLabel = new Label(title);
             titleLabel.getStyleClass().add(titleStyle != null ? titleStyle : "section-title");
             section.getChildren().add(titleLabel);
         }
-        
+
         return section;
     }
-    
+
     /**
      * Create a standard section with default styling
      */
     public static VBox createSection(String title) {
         return createSection(title, "section-container", "section-title");
     }
-    
+
     /**
      * Create a compact section with smaller styling
      */
     public static VBox createCompactSection(String title) {
         return createSection(title, "compact-section-container", "compact-section-title");
     }
-    
+
     /**
      * Create a button group container
      */
@@ -87,21 +89,21 @@ public class UIComponentFactory {
         buttonGroup.getStyleClass().add(styleClass != null ? styleClass : "button-group");
         return buttonGroup;
     }
-    
+
     /**
      * Create a standard button group
      */
     public static HBox createButtonGroup() {
         return createButtonGroup("button-group");
     }
-    
+
     /**
      * Create a compact button group
      */
     public static HBox createCompactButtonGroup() {
         return createButtonGroup("compact-button-group");
     }
-    
+
     /**
      * Create a form group container
      */
@@ -110,21 +112,21 @@ public class UIComponentFactory {
         formGroup.getStyleClass().add(styleClass != null ? styleClass : "form-group");
         return formGroup;
     }
-    
+
     /**
      * Create a standard form group
      */
     public static HBox createFormGroup() {
         return createFormGroup("form-group");
     }
-    
+
     /**
      * Create a compact form group
      */
     public static HBox createCompactFormGroup() {
         return createFormGroup("compact-form-group");
     }
-    
+
     /**
      * Create a text field with style and placeholder
      */
@@ -138,14 +140,14 @@ public class UIComponentFactory {
         }
         return textField;
     }
-    
+
     /**
      * Create a standard text field
      */
     public static TextField createTextField(String placeholder) {
         return createTextField(placeholder, "text-field");
     }
-    
+
     /**
      * Create a header box with title and action button on the right
      */
@@ -153,18 +155,18 @@ public class UIComponentFactory {
         HBox headerBox = new HBox();
         headerBox.setSpacing(10);
         headerBox.setPadding(new Insets(0, 0, 10, 0));
-        
+
         Label titleLabel = new Label(title);
         titleLabel.getStyleClass().add("section-title");
-        
+
         // Add spacer to push action button to the right
         HBox spacer = new HBox();
         HBox.setHgrow(spacer, Priority.ALWAYS);
-        
+
         headerBox.getChildren().addAll(titleLabel, spacer, actionButton);
         return headerBox;
     }
-    
+
     /**
      * Add multiple children to a container
      */
