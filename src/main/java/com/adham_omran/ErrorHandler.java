@@ -69,31 +69,4 @@ public class ErrorHandler {
         return executeWithErrorHandling("in PDF operation (" + operation + ")", supplier);
     }
 
-    /**
-     * Handle database operation errors specifically
-     */
-    public static <T> T handleDatabaseError(String operation, Supplier<T> supplier) {
-        return executeWithErrorHandling("in database operation (" + operation + ")", supplier);
-    }
-
-    /**
-     * Handle image processing errors specifically
-     */
-    public static <T> T handleImageError(String operation, Supplier<T> supplier) {
-        return executeWithErrorHandling("in image processing (" + operation + ")", supplier);
-    }
-
-    /**
-     * Handle file operation errors specifically
-     */
-    public static <T> T handleFileError(String operation, Supplier<T> supplier) {
-        return executeWithErrorHandling("in file operation (" + operation + ")", supplier);
-    }
-
-    /**
-     * Handle UI operation errors specifically
-     */
-    public static boolean handleUIError(String operation, Runnable runnable) {
-        return executeWithErrorHandling("in UI operation (" + operation + ")", runnable);
-    }
 }

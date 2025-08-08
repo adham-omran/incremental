@@ -127,25 +127,16 @@ public class UIComponentFactory {
         return createFormGroup("compact-form-group");
     }
 
+
     /**
-     * Create a text field with style and placeholder
+     * Create a text field with placeholder
      */
-    public static TextField createTextField(String placeholder, String styleClass) {
+    public static TextField createTextField(String placeholder) {
         TextField textField = new TextField();
         if (placeholder != null && !placeholder.isEmpty()) {
             textField.setPromptText(placeholder);
         }
-        if (styleClass != null && !styleClass.isEmpty()) {
-            textField.getStyleClass().add(styleClass);
-        }
         return textField;
-    }
-
-    /**
-     * Create a standard text field
-     */
-    public static TextField createTextField(String placeholder) {
-        return createTextField(placeholder, "text-field");
     }
 
     /**

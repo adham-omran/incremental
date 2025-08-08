@@ -73,13 +73,6 @@ public class RectangleData {
         return Math.abs(y2 - y1);
     }
 
-    public double getMinX() {
-        return Math.min(x1, x2);
-    }
-
-    public double getMinY() {
-        return Math.min(y1, y2);
-    }
 
     @Override
     public String toString() {

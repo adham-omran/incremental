@@ -55,7 +55,7 @@ public class ButtonStateManager {
     /**
      * Create a timer that resets the button to its original state after a delay
      */
-    public static Timeline createResetTimer(Button button, double delaySeconds) {
+    private static Timeline createResetTimer(Button button, double delaySeconds) {
         return new Timeline(new KeyFrame(Duration.seconds(delaySeconds), event -> {
             resetToOriginal(button);
         }));

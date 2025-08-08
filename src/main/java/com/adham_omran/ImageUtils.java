@@ -15,7 +15,7 @@ public class ImageUtils {
      * Convert BufferedImage to JavaFX Image using byte array method
      */
     public static Image bufferedImageToFXImage(BufferedImage bufferedImage) {
-        return ErrorHandler.handleImageError("converting BufferedImage to JavaFX Image", () -> {
+        return ErrorHandler.executeWithErrorHandling("in image processing (converting BufferedImage to JavaFX Image)", () -> {
             try {
                 // Convert BufferedImage to byte array
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -29,6 +29,29 @@ public class ImageUtils {
                 throw new RuntimeException(e);
             }
         });
+    }
+
+
+    /**
+     * Convert BufferedImage to InputStream for database storage
+     */
+    public static InputStream bufferedImageToInputStream(BufferedImage bufferedImage, String format) {
+        return ErrorHandler.executeWithErrorHandling("in image processing (converting BufferedImage to InputStream)", () -> {
+            try {
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                ImageIO.write(bufferedImage, format, baos);
+                return new ByteArrayInputStream(baos.toByteArray());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    /**
+     * Convert BufferedImage to InputStream using PNG format
+     */
+    public static InputStream bufferedImageToInputStream(BufferedImage bufferedImage) {
+        return bufferedImageToInputStream(bufferedImage, "png");
     }
 
     /**
@@ -57,47 +80,18 @@ public class ImageUtils {
     }
 
     /**
-     * Convert BufferedImage to InputStream for database storage
+     * Get the byte array size for a BufferedImage in PNG format
      */
-    public static InputStream bufferedImageToInputStream(BufferedImage bufferedImage, String format) {
-        return ErrorHandler.handleImageError("converting BufferedImage to InputStream", () -> {
-            try {
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                ImageIO.write(bufferedImage, format, baos);
-                return new ByteArrayInputStream(baos.toByteArray());
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        });
-    }
-
-    /**
-     * Convert BufferedImage to InputStream using PNG format
-     */
-    public static InputStream bufferedImageToInputStream(BufferedImage bufferedImage) {
-        return bufferedImageToInputStream(bufferedImage, "png");
-    }
-
-    /**
-     * Get the byte array size for a BufferedImage in specified format
-     */
-    public static int getBufferedImageByteSize(BufferedImage bufferedImage, String format) {
+    public static int getBufferedImageByteSize(BufferedImage bufferedImage) {
         return ErrorHandler.executeWithErrorHandling("calculating BufferedImage byte size", () -> {
             try {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                ImageIO.write(bufferedImage, format, baos);
+                ImageIO.write(bufferedImage, "png", baos);
                 return baos.size();
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }, 0);
-    }
-
-    /**
-     * Get the byte array size for a BufferedImage in PNG format
-     */
-    public static int getBufferedImageByteSize(BufferedImage bufferedImage) {
-        return getBufferedImageByteSize(bufferedImage, "png");
     }
 
 }

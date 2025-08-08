@@ -124,7 +124,7 @@ public class DatabaseService {
     public Image readImage() {
         String sql = "select img, scheduled_at from images order by scheduled_at desc";
 
-        return ErrorHandler.handleDatabaseError("reading image", () -> {
+        return ErrorHandler.executeWithErrorHandling("in database operation (reading image)", () -> {
             try {
                 return executeQuery(sql, null, rs -> {
                     if (rs.next()) {
@@ -150,7 +150,7 @@ public class DatabaseService {
     public Topic nextTopic() {
         String sql = "select rowid, * from images order by scheduled_at asc";
 
-        return ErrorHandler.handleDatabaseError("loading next topic", () -> {
+        return ErrorHandler.executeWithErrorHandling("in database operation (loading next topic)", () -> {
             try {
                 Topic topic = executeQuery(sql, null, rs -> {
                     if (rs.next()) {
@@ -185,7 +185,7 @@ public class DatabaseService {
     public Topic findTopic(int rowid) {
         String sql = "select rowid, * from images WHERE rowid = ?";
 
-        return ErrorHandler.handleDatabaseError("finding topic", () -> {
+        return ErrorHandler.executeWithErrorHandling("in database operation (finding topic)", () -> {
             try {
                 return executeQuery(sql, pstmt -> pstmt.setInt(1, rowid), rs -> {
                     if (rs.next()) {

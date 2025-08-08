@@ -493,7 +493,7 @@ public class Incremental extends Application {
 
     private void openLightweightPdfViewer(Topic pdfTopic) {
         Stage viewerStage = new Stage();
-        viewerStage.setTitle("Source PDF - " + getFileNameFromPath(pdfTopic.getPdfPath()));
+        viewerStage.setTitle("Source PDF - " + CoreUtils.getFileNameFromPath(pdfTopic.getPdfPath()));
         viewerStage.getIcons().add(new Image(getClass().getResourceAsStream("/icon.png")));
 
         // Create image view for PDF display
@@ -1069,7 +1069,7 @@ public class Incremental extends Application {
             switch (kind.toLowerCase()) {
                 case "pdf":
                     if (currentTopic.isPdf()) {
-                        String fileName = getFileNameFromPath(currentTopic.getPdfPath());
+                        String fileName = CoreUtils.getFileNameFromPath(currentTopic.getPdfPath());
                         currentSourceLabel
                                 .setText("PDF: " + fileName + " (Page " + currentTopic.getCurrentPage() + ")");
                     } else {
@@ -1089,7 +1089,7 @@ public class Incremental extends Application {
                     if (currentTopic.getTopicParent() > 0) {
                         String parentPdfPath = database.getParentPdfPath(currentTopic.getTopicParent());
                         if (parentPdfPath != null) {
-                            String fileName = getFileNameFromPath(parentPdfPath);
+                            String fileName = CoreUtils.getFileNameFromPath(parentPdfPath);
                             String pageInfo = "";
                             if (currentTopic.getPdfPage() != null) {
                                 pageInfo = " (Page " + currentTopic.getPdfPage() + ")";
@@ -1157,9 +1157,6 @@ public class Incremental extends Application {
         }
     }
 
-    private String getFileNameFromPath(String path) {
-        return CoreUtils.getFileNameFromPath(path);
-    }
 
     /**
      * Get an image off the system clipboard.
